@@ -17,6 +17,7 @@ from app.downloader.base import BaseProvider, SearchParams
 from app.downloader.opensubtitles import OpenSubtitlesProvider
 from app.models.task import DownloadTask, TaskStatus, BatchProgress
 from app.models.video import VideoFile
+from app.utils.logging import get_logger
 
 
 # 进度回调类型
@@ -26,6 +27,9 @@ ProgressCallback = Callable[[DownloadTask, int, int], None]  # task, current, to
 class DownloadCancelled(Exception):
     """下载被取消"""
     pass
+
+
+logger = get_logger("downloader")
 
 
 @dataclass
@@ -132,6 +136,8 @@ class DownloadManager:
         self.reset_cancelled()
         pending = [t for t in self._tasks if t.status == "pending"]
         total = len(pending)
+
+        logger.info(f"开始批量下载: {total} 个任务")
 
         if total == 0:
             return self.batch_progress

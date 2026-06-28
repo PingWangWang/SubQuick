@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Optional
 
 from app.models.settings import Settings
+from app.utils.logging import get_logger
 
 
 # 配置目录常量

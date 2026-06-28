@@ -20,6 +20,10 @@ from app.scanner.subtitle_detector import (
     count_subtitles,
     get_subtitle_filenames,
 )
+from app.utils.logging import get_logger
+
+
+logger = get_logger("scanner")
 
 
 # 进度回调类型：当前文件路径, 已处理数, 总数, 当前阶段描述
@@ -99,6 +103,8 @@ def scan_directory(
     result = ScanResult()
     filter_obj = file_filter or FileFilter()
 
+    logger.info(f"开始扫描目录: {scan_dir} (递归={recursive})")
+
     # 第一遍计数（用于进度百分比）
     total_estimate = 0
     if progress_callback:
@@ -133,6 +139,7 @@ def scan_directory(
 
     result.scan_duration = time.time() - start_time
     result.errors = errors
+    logger.info(result.summary())
     return result
 
 

@@ -2,14 +2,25 @@
 
 Usage:
     flet run main.py
+
+首次运行会自动创建日志并触发引导向导。
 """
 
+import sys
+import traceback
+
 import flet as ft
+
 from app.ui.app import SubQuickApp
+from app.utils.logging import ensure_logging, get_logger
 
 
 def main(page: ft.Page):
-    # 必须先配置窗口，避免循环导入
+    # 初始化日志系统
+    logger = ensure_logging()
+    logger.info("SubQuick 启动")
+
+    # 配置窗口
     page.window_width = 1440
     page.window_height = 810
     page.window_min_width = 1280
@@ -19,9 +30,44 @@ def main(page: ft.Page):
     page.padding = 0
     page.spacing = 0
 
-    app = SubQuickApp(page)
-    app.run()
+    # 注册 Flet 页面级异常处理
+    def on_error(e):
+        logger.error(f"页面异常: {e}", exc_info=True)
+        page.snack_bar = ft.SnackBar(
+            content=ft.Text(f"发生错误: {e}", size=14),
+            bgcolor="#C62828",
+        )
+        page.snack_bar.open = True
+        page.update()
+
+    page.on_error = on_error
+
+    try:
+        app = SubQuickApp(page)
+        app.run()
+        logger.info("SubQuick 主界面加载完成")
+    except Exception as e:
+        logger.critical(f"应用启动失败: {e}", exc_info=True)
+        page.clean()
+        page.add(
+            ft.Column(
+                controls=[
+                    ft.Container(height=100),
+                    ft.Icon(ft.Icons.ERROR_OUTLINE, size=64, color="#C62828"),
+                    ft.Text("应用启动失败", size=24, weight=ft.FontWeight.BOLD),
+                    ft.Text(str(e), size=14, color="#757575"),
+                    ft.Text("请查看日志获取详细信息", size=12, color="#9E9E9E"),
+                ],
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            )
+        )
+        page.update()
 
 
 if __name__ == "__main__":
-    ft.app(target=main)
+    try:
+        ft.app(target=main)
+    except Exception as e:
+        print(f"Fatal error: {e}", file=sys.stderr)
+        traceback.print_exc()
+        sys.exit(1)
