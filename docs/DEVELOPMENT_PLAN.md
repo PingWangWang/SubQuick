@@ -169,6 +169,7 @@ pip install pyinstaller
 ```
 flet>=0.85.0
 requests>=2.28.0
+pyinstaller>=6.0.0
 ```
 
 ---
