@@ -78,5 +78,14 @@ class SubQuickApp:
         self.page.update()
 
     def run(self) -> None:
-        """启动应用，加载主页面"""
-        self.navigate_to("main")
+        """启动应用
+
+        首次运行显示引导向导，否则直接进入主界面。
+        """
+        if self.settings.first_run:
+            from app.ui.pages.wizard_page import WizardPage
+            self.page.clean()
+            self.page.add(WizardPage(self))
+            self.page.update()
+        else:
+            self.navigate_to("main")

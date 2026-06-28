@@ -15,7 +15,6 @@ from typing import Callable, Optional
 
 from app.downloader.base import BaseProvider, SearchParams
 from app.downloader.opensubtitles import OpenSubtitlesProvider
-from app.matcher.subtitle_matcher import select_best_subtitles
 from app.models.task import DownloadTask, TaskStatus, BatchProgress
 from app.models.video import VideoFile
 
@@ -174,6 +173,7 @@ class DownloadManager:
                 return
 
             # 2. 选择最优字幕
+            from app.matcher.subtitle_matcher import select_best_subtitles
             selected = select_best_subtitles(
                 candidates=search_result,
                 language_priority=self.config.language_priority,
