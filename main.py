@@ -66,7 +66,7 @@ def main(page: ft.Page):
 
 if __name__ == "__main__":
     try:
-        ft.app(target=main)
+        ft.run(main)
     except Exception as e:
         print(f"Fatal error: {e}", file=sys.stderr)
         traceback.print_exc()
