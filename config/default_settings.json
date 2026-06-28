@@ -1,0 +1,39 @@
+{
+    "_version": "1.0.0",
+    "video_directories": [],
+    "video_formats": ["mp4", "mkv", "avi", "mov", "wmv"],
+    "language_priority": {
+        "primary": "zh",
+        "fallback_chain": ["zh", "en"],
+        "auto_fallback": true
+    },
+    "matching": {
+        "max_subtitles_per_video": 3,
+        "auto_select": true,
+        "prefer_hearing_impaired": false
+    },
+    "subtitle_providers": {
+        "opensubtitles": {
+            "enabled": true,
+            "api_key": "",
+            "api_key_validated": false
+        }
+    },
+    "proxy": {
+        "enabled": false,
+        "type": "http",
+        "host": "",
+        "port": 0,
+        "username": "",
+        "password": ""
+    },
+    "ignore_list": {
+        "directories": [],
+        "patterns": ["*sample*", "*trailer*"]
+    },
+    "ui": {
+        "theme": "system",
+        "language": "zh"
+    },
+    "first_run": true
+}

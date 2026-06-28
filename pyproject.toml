@@ -1,0 +1,16 @@
+[project]
+name = "SubQuick"
+version = "1.0.0"
+description = "快速字幕匹配工具 - 批量扫描本地视频，自动检测缺失字幕，一键在线匹配下载"
+authors = [{ name = "PingWang" }]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "flet>=0.85.0",
+    "requests>=2.28.0",
+]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
