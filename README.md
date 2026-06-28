@@ -133,8 +133,11 @@ python -m venv .venv
 # 3. 安装依赖
 pip install -r requirements.txt
 
-# 4. 运行
-flet run main.py
+# 4. 一键调试启动（推荐）
+.\scripts\run_dev.ps1
+
+# 或手动运行
+flet run main.py --port 8550
 ```
 
 ### 打包为 exe
