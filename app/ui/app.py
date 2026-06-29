@@ -16,11 +16,13 @@ class SubQuickApp:
         self.settings_service = SettingsService()
         self.settings = self.settings_service.load()
         self._current_page: str = "main"
+        self._main_page = None
+        self._settings_page = None
 
     # ── 主题管理 ──────────────────────────────────────────
 
     def _apply_theme(self) -> None:
-        """根据当前设置应用主题"""
+        """根据当前设置应用主题（启动时和切换时均需调用）"""
         theme_mode = self.settings.theme
         if theme_mode == "system":
             self.page.theme_mode = ft.ThemeMode.SYSTEM
@@ -29,8 +31,6 @@ class SubQuickApp:
         elif theme_mode == "dark":
             self.page.theme_mode = ft.ThemeMode.DARK
 
-        # 自定义主题色
-        is_dark = self.page.theme_mode == ft.ThemeMode.DARK
         self.page.theme = ft.Theme(
             color_scheme_seed=AppColors.PRIMARY,
             use_material3=True,
@@ -61,19 +61,24 @@ class SubQuickApp:
         return self._current_page
 
     def navigate_to(self, page_name: str) -> None:
-        """切换到指定页面（使用懒导入避免循环依赖）"""
+        """切换到指定页面（缓存页面实例，避免重复创建丢失状态）"""
         self._current_page = page_name
         self.page.clean()
 
         if page_name == "main":
-            from app.ui.pages.main_page import MainPage
-            self.page.add(MainPage(self))
+            if self._main_page is None:
+                from app.ui.pages.main_page import MainPage
+                self._main_page = MainPage(self)
+            self.page.add(self._main_page)
         elif page_name == "settings":
             from app.ui.pages.settings_page import SettingsPage
-            self.page.add(SettingsPage(self))
+            self._settings_page = SettingsPage(self)
+            self.page.add(self._settings_page)
         else:
-            from app.ui.pages.main_page import MainPage
-            self.page.add(MainPage(self))
+            if self._main_page is None:
+                from app.ui.pages.main_page import MainPage
+                self._main_page = MainPage(self)
+            self.page.add(self._main_page)
 
         self.page.update()
 
@@ -82,6 +87,9 @@ class SubQuickApp:
 
         首次运行显示引导向导，否则直接进入主界面。
         """
+        # 先应用已保存的主题
+        self._apply_theme()
+
         if self.settings.first_run:
             from app.ui.pages.wizard_page import WizardPage
             self.page.clean()

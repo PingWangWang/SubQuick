@@ -27,7 +27,6 @@ class ProgressPanel(ft.Container):
     def __init__(self):
         self._mode: str = "idle"  # idle | scanning | downloading
         self._progress_bar = ft.ProgressBar(
-            width=700,
             bar_height=8,
             value=0,
             color=AppColors.PRIMARY,
@@ -68,11 +67,13 @@ class ProgressPanel(ft.Container):
 
         super().__init__(
             content=content_column,
-            padding=ft.Padding(left=12, right=12, top=12, bottom=12),
-            border_radius=8,
+            padding=ft.Padding(left=16, right=16, top=8, bottom=8),
             bgcolor=ft.Colors.with_opacity(0.05, AppColors.PRIMARY),
-            visible=False,
         )
+
+    def _set_bar_width(self, width: int) -> None:
+        """由外部调用，设置进度条宽度与容器匹配"""
+        self._progress_bar.width = width
 
     # ── 模式切换 ──────────────────────────────────────────
 

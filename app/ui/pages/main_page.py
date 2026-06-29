@@ -30,11 +30,13 @@ class ScanPanel(ft.Container):
         self._app = app
         self._on_scan_start = on_scan_start
 
-        # 目录输入
+        # 目录输入（从设置中恢复上次使用的目录）
+        last_dir = app.settings.video_directories[-1] if app.settings.video_directories else ""
         self._dir_field = ft.TextField(
             hint_text="选择视频目录...",
             width=500,
             read_only=True,
+            value=last_dir,
             on_click=self._pick_directory,
         )
         self._browse_btn = ft.Button(
@@ -266,7 +268,7 @@ class MainPage(ft.Column):
             bgcolor=ft.Colors.with_opacity(0.03, ft.Colors.GREY),
         )
 
-        # ── 布局（垂直堆叠 16:9） ──────────────────────
+        # ── 布局（垂直堆叠） ───────────────────────────
 
         super().__init__(
             spacing=4,
@@ -279,7 +281,6 @@ class MainPage(ft.Column):
                         expand=True,
                         controls=[
                             self._scan_panel,
-                            self._progress_panel,
                             self._video_table,
                             self._action_panel,
                         ],
@@ -287,6 +288,7 @@ class MainPage(ft.Column):
                     padding=ft.Padding(left=16, right=16),
                     expand=True,
                 ),
+                self._progress_panel,
                 self._status_bar,
             ],
         )
@@ -306,6 +308,15 @@ class MainPage(ft.Column):
         self._video_table.set_videos([])
         self._action_panel.set_buttons_enabled(False)
         self._update_status("正在扫描...")
+
+        # 记住本次选择的目录
+        if directory and (
+            not self._app.settings.video_directories
+            or self._app.settings.video_directories[-1] != directory
+        ):
+            self._app.settings.video_directories = [directory]
+            self._app.settings_service.save(self._app.settings)
+
         self.update()
 
         page = self._app.page
