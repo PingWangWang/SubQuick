@@ -11,6 +11,9 @@ from typing import Callable, Optional
 from app.models.video import VideoFile
 from app.ui.components.status_badge import StatusBadge
 from app.ui.theme import AppColors
+from app.utils.logging import get_logger
+
+logger = get_logger("video_table")
 
 
 # 列定义
@@ -178,6 +181,7 @@ class VideoTable(ft.Container):
     # ── 筛选与排序 ────────────────────────────────────────
 
     def _on_filter_change(self, e) -> None:
+        logger.info(f"筛选 → {e.control.value}")
         self._filter_format = e.control.value
         self._apply_filter()
 
@@ -383,6 +387,7 @@ class VideoTable(ft.Container):
         }
         if not selected:
             return
+        logger.info(f"删除选中 → {len(selected)}部")
         self._videos = [v for v in self._videos if str(v.path) not in selected]
         self._selected_indices.clear()
         self._build_filter_options(self._videos)
@@ -390,6 +395,7 @@ class VideoTable(ft.Container):
 
     def _clear_all(self, e=None) -> None:
         """清空所有记录"""
+        logger.info("清空列表")
         self._videos = []
         self._filtered_videos = []
         self._selected_indices.clear()

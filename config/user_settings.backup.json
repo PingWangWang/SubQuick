@@ -35,7 +35,7 @@
             "api_key_validated": true
         }
     },
-    "active_provider": "shooter",
+    "active_provider": "subdl",
     "proxy": {
         "enabled": false,
         "type": "http",
@@ -56,8 +56,8 @@
         "language": "zh",
         "font_family": "Microsoft YaHei",
         "font_size": 16,
-        "window_width": 800,
-        "window_height": 450
+        "window_width": 924,
+        "window_height": 521
     },
     "first_run": false
 }

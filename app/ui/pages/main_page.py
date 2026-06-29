@@ -22,6 +22,9 @@ from app.scanner.video_scanner import ProgressCallback
 from app.downloader import DownloadManager, DownloadConfig
 from app.services.settings_service import SettingsService
 from app.services.scan_cache import save_scan_cache, load_scan_cache
+from app.utils.logging import get_logger
+
+logger = get_logger("main")
 
 
 class ScanPanel(ft.Container):
@@ -78,6 +81,7 @@ class ScanPanel(ft.Container):
 
     def _pick_directory(self, e=None):
         """打开目录选择器"""
+        logger.info("浏览目录")
         import tkinter as tk
         from tkinter import filedialog
         root = tk.Tk()
@@ -93,6 +97,7 @@ class ScanPanel(ft.Container):
         """点击开始/取消扫描"""
         if self._scan_text.value == "开始扫描":
             directory = self._dir_field.value
+            logger.info(f"开始扫描 → {directory}")
             if not directory:
                 self._show_snackbar("请先选择视频目录", AppColors.WARNING)
                 return
@@ -107,8 +112,9 @@ class ScanPanel(ft.Container):
             if self._on_scan_start:
                 self._on_scan_start(directory)
         else:
+            logger.info("取消扫描")
             if self._on_scan_start:
-                self._on_scan_start(None)  # 取消
+                self._on_scan_start(None)
 
     def reset_scan_button(self):
         """恢复扫描按钮"""
@@ -436,6 +442,7 @@ class MainPage(ft.Column):
         """一键匹配：下载所有选中的缺失字幕视频"""
         selected = self._video_table.get_selected_videos()
         selected_missing = [v for v in selected if v.subtitle_status == "missing"]
+        logger.info(f"一键匹配 → {len(selected_missing)}部视频")
 
         if not selected_missing:
             self._show_snackbar("请先勾选需要匹配字幕的视频", AppColors.WARNING)
@@ -593,6 +600,7 @@ class MainPage(ft.Column):
     def _export_missing_list(self) -> None:
         """导出所有视频列表为 CSV"""
         videos = self._video_table._filtered_videos
+        logger.info(f"导出列表 → {len(videos) if videos else 0}部视频")
         if not videos:
             videos = self._video_table._videos
         if not videos:

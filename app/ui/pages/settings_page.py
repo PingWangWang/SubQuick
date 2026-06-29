@@ -13,6 +13,9 @@ from __future__ import annotations
 import flet as ft
 from app.ui.theme import AppColors
 from app.ui.app import SubQuickApp
+from app.utils.logging import get_logger
+
+logger = get_logger("settings")
 
 
 class SettingsPage(ft.Column):
@@ -442,18 +445,20 @@ class SettingsPage(ft.Column):
 
     def _on_max_sub_change(self, e):
         value = int(e.control.value)
+        logger.info(f"最大字幕数 → {value}")
         self._settings.max_subtitles_per_video = value
         self._max_sub_label.value = f"当前: {value} 个"
         self._save_settings()
 
     def _on_lang_change(self, e):
+        logger.info(f"首选语言 → {e.control.value}")
         self._settings.language_priority.primary = e.control.value
-        # 更新降级链
         from app.matcher import build_fallback_chain
         self._settings.language_priority.fallback_chain = build_fallback_chain(e.control.value)
         self._save_settings()
 
     def _on_api_key_change(self, e):
+        logger.info("API Key 已修改")
         active = self._settings.active_provider
         if active not in self._settings.subtitle_providers:
             from app.models.settings import ProviderConfig
@@ -465,6 +470,7 @@ class SettingsPage(ft.Column):
     def _on_provider_change(self, e):
         """切换字幕源"""
         new_provider = e.control.value
+        logger.info(f"字幕源切换 → {new_provider}")
         if new_provider and new_provider != self._settings.active_provider:
             self._settings.active_provider = new_provider
             self._save_settings()
@@ -476,6 +482,7 @@ class SettingsPage(ft.Column):
 
     def _validate_api_key(self, e=None):
         """验证当前选中 provider 的 API Key"""
+        logger.info(f"验证 API Key → {self._settings.active_provider}")
         active = self._settings.active_provider
         cfg = self._settings.subtitle_providers.get(active, {})
         api_key = cfg.api_key if hasattr(cfg, 'api_key') else ""
@@ -524,6 +531,7 @@ class SettingsPage(ft.Column):
 
     def _check_update(self, e=None) -> None:
         """检查 GitHub Release 更新"""
+        logger.info("检查更新")
         import urllib.request
         import json
         import threading
@@ -580,6 +588,7 @@ class SettingsPage(ft.Column):
             fmt for fmt, cb in self._format_checkboxes.items()
             if cb.value
         ]
+        logger.info(f"视频格式 → {formats}")
         self._settings.video_formats = formats or ["mp4", "mkv", "avi", "mov", "wmv"]
         self._save_settings()
 
@@ -588,20 +597,24 @@ class SettingsPage(ft.Column):
             p.strip() for p in e.control.value.split(",")
             if p.strip()
         ]
+        logger.info(f"忽略模式 → {patterns}")
         self._settings.ignore_list.patterns = patterns
         self._save_settings()
 
     def _on_theme_change(self, e):
         theme = e.control.value
+        logger.info(f"主题 → {theme}")
         self._app.set_theme(theme)
 
     def _on_font_family_change(self, e):
+        logger.info(f"字体 → {e.control.value}")
         self._settings.ui.font_family = e.control.value
         self._app._apply_theme()
         self._save_settings()
         self._app.page.update()
 
     def _on_font_size_change(self, e):
+        logger.info(f"字号 → {e.control.value}")
         self._settings.ui.font_size = int(e.control.value)
         self._app._apply_theme()
         self._save_settings()

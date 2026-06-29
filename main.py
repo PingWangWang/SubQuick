@@ -7,7 +7,6 @@ Usage:
 """
 
 import sys
-import time
 import traceback
 
 import flet as ft
@@ -44,26 +43,21 @@ def main(page: ft.Page):
     page.padding = 0
     page.spacing = 0
 
-    # 窗口大小变更时保存（仅保存 ≥ 最小尺寸的合法值）
-    _last_save = [0.0]
-    def on_resize(e):
-        import time
-        w = page.window.width
-        h = page.window.height
-        if w and h and int(w) >= 800 and int(h) >= 450:
-            now = time.time()
-            if now - _last_save[0] < 0.3:  # 拖拽缩放最多 300ms 写一次
-                return
-            _last_save[0] = now
-            sw, sh = int(w), int(h)
-            svc2 = SettingsService()
-            s = svc2.load()
-            s.ui.window_width = sw
-            s.ui.window_height = sh
-            svc2.save(s)
-            logger.info(f"窗口大小已保存: {sw}x{sh}")
+    # 窗口大小在用户拖拽结束后保存（RESIZED 仅拖拽松开时触发，避开启动内部事件）
+    def on_window_event(e):
+        if e.type == ft.WindowEventType.RESIZED:
+            w = page.window.width
+            h = page.window.height
+            if w and h and int(w) >= 800 and int(h) >= 450:
+                sw, sh = int(w), int(h)
+                svc2 = SettingsService()
+                s = svc2.load()
+                s.ui.window_width = sw
+                s.ui.window_height = sh
+                svc2.save(s)
+                logger.info(f"窗口大小已保存: {sw}x{sh}")
 
-    page.on_resize = on_resize
+    page.window.on_event = on_window_event
 
     # 注册 Flet 页面级异常处理
     def on_error(e):
