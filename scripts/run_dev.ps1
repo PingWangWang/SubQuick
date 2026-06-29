@@ -51,6 +51,8 @@ Write-Host "[4/5] 检查 Flet 运行环境..." -ForegroundColor Yellow
 
 $fletCache = "$env:LOCALAPPDATA\flet"
 $fletCacheHome = "$env:USERPROFILE\.flet"
+$fletClientDir = "$env:USERPROFILE\.flet\client"
+$localFletZip = ".\plugins\flet\flet-windows.zip"
 $cacheReady = $false
 
 if (Test-Path $fletCache) {
@@ -68,13 +70,36 @@ if (-not $cacheReady -and (Test-Path $fletCacheHome)) {
     }
 }
 
+# 如果缓存未就绪，检测本地预下载的 zip
+if (-not $cacheReady -and (Test-Path $localFletZip)) {
+    Write-Host "  📦 检测到本地预下载的 Flet 引擎包" -ForegroundColor Cyan
+    Write-Host "  → 正在解压到 Flet 缓存目录 ..." -ForegroundColor Yellow
+
+    # 确保目标目录存在
+    New-Item -ItemType Directory -Force -Path $fletClientDir | Out-Null
+
+    # 解压 zip（需要 .NET 的 ZipFile 或 PowerShell 5+ 的 Expand-Archive）
+    try {
+        # 先清空旧缓存避免残留冲突
+        if (Test-Path "$fletClientDir\*") {
+            Remove-Item -Recurse -Force "$fletClientDir\*"
+        }
+        Expand-Archive -Path $localFletZip -DestinationPath $fletClientDir -Force
+        $size = (Get-ChildItem -Recurse $fletClientDir | Measure-Object -Property Length -Sum).Sum
+        Write-Host "  ✅ Flet 引擎缓存已就绪（来自本地包，$([math]::Round($size/1MB)) MB）" -ForegroundColor Green
+        $cacheReady = $true
+    } catch {
+        Write-Host "  ⚠ 解压失败: $_" -ForegroundColor Red
+        Write-Host "  → 将尝试自动从网络下载" -ForegroundColor Yellow
+    }
+}
+
 if (-not $cacheReady) {
     Write-Host "  ⏳ Flet 引擎尚未下载（首次运行需要）" -ForegroundColor Yellow
     Write-Host "  " -NoNewline
     Write-Host "将要下载 Flutter 引擎（约 50-200MB），在此期间没有进度条是正常的。" -ForegroundColor Cyan
     Write-Host "  " -NoNewline
     Write-Host "可以通过任务管理器查看网络流量确认下载正在进行。" -ForegroundColor Cyan
-    Write-Host ""
 }
 Write-Host ""
 
@@ -82,18 +107,6 @@ Write-Host ""
 Write-Host "[5/5] 启动 SubQuick..." -ForegroundColor Yellow
 Write-Host "  端口: http://localhost:8550" -ForegroundColor Gray
 Write-Host "  按 Ctrl+C 停止" -ForegroundColor Gray
-Write-Host ""
-Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
-Write-Host "  Flet 首次准备提示:" -ForegroundColor Cyan
-Write-Host "  'Preparing Flet...' 正在下载桌面客户端" -ForegroundColor Cyan
-Write-Host "  来源: github.com/flet-dev/flet/releases" -ForegroundColor Cyan
-Write-Host "  缓存: %USERPROFILE%\.flet\client\" -ForegroundColor Cyan
-Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
-Write-Host "  如果下载卡住，可以:" -ForegroundColor Cyan
-Write-Host "  1. 设置代理后重试" -ForegroundColor Cyan
-Write-Host "  2. 手动从 GitHub Releases 下载 flet-windows.zip" -ForegroundColor Cyan
-Write-Host "     解压到 %USERPROFILE%\.flet\client\flet\" -ForegroundColor Cyan
-Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
 Write-Host ""
 
 flet run main.py --port 8550
