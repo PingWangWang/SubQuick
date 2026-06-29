@@ -27,7 +27,8 @@ class WizardPage(ft.Column):
         self._step_container = ft.Container(expand=True)
         self._step_indicator = ft.Text("步骤 1/4", size=12, color=ft.Colors.GREY_500)
         self._back_btn = ft.TextButton("上一步", disabled=True, on_click=self._go_back)
-        self._next_btn = ft.Button("下一步", on_click=self._go_next)
+        self._next_text = ft.Text("下一步")
+        self._next_btn = ft.Button(content=self._next_text, on_click=self._go_next)
         self._skip_btn = ft.TextButton("跳过引导", on_click=self._finish_wizard)
 
         # 各步骤中收集的数据
@@ -101,9 +102,9 @@ class WizardPage(ft.Column):
         # 更新按钮状态
         self._back_btn.disabled = step <= 1
         if step >= self._total_steps:
-            self._next_btn.text = "开始使用"
+            self._next_text.value = "开始使用"
         else:
-            self._next_btn.text = "下一步"
+            self._next_text.value = "下一步"
         self._skip_btn.visible = step < self._total_steps - 1
 
         self._step_container.update()
@@ -242,7 +243,7 @@ class WizardPage(ft.Column):
                     ft.Container(height=10),
                     ft.Text("OpenSubtitles API Key", size=14),
                     key_field,
-                    ft.Button("验证 Key", on_click=validate_key),
+                    ft.Button(content=ft.Text("验证 Key"), on_click=validate_key),
                     status_text,
                     ft.TextButton(
                         "没有 Key？前往 opensubtitles.com 注册",

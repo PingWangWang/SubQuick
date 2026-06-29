@@ -42,7 +42,7 @@ class SearchDialog(ft.AlertDialog):
             width=200,
         )
         self._search_btn = ft.Button(
-            "搜索",
+            content=ft.Text("搜索"),
             icon=ft.Icons.SEARCH,
             on_click=self._do_search,
         )
@@ -59,8 +59,9 @@ class SearchDialog(ft.AlertDialog):
         )
 
         # 下载按钮
+        self._download_text = ft.Text("下载选中")
         self._download_btn = ft.Button(
-            "下载选中",
+            content=self._download_text,
             icon=ft.Icons.DOWNLOAD,
             disabled=True,
             on_click=self._do_download,
@@ -190,7 +191,7 @@ class SearchDialog(ft.AlertDialog):
             return
 
         self._download_btn.disabled = True
-        self._download_btn.text = "下载中..."
+        self._download_text.value = "下载中..."
         self.update()
 
         if self._on_download:
@@ -198,7 +199,7 @@ class SearchDialog(ft.AlertDialog):
 
     def finish_download(self, success: bool = True, message: str = "") -> None:
         """下载完成后调用"""
-        self._download_btn.text = "下载选中"
+        self._download_text.value = "下载选中"
         self._download_btn.disabled = True
         self._status_text.value = message
         self._status_text.color = AppColors.SUCCESS if success else AppColors.ERROR

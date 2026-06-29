@@ -38,12 +38,13 @@ class ScanPanel(ft.Container):
             on_click=self._pick_directory,
         )
         self._browse_btn = ft.Button(
-            "浏览目录",
+            content=ft.Text("浏览目录"),
             icon=ft.Icons.FOLDER_OPEN,
             on_click=self._pick_directory,
         )
+        self._scan_text = ft.Text("开始扫描")
         self._scan_btn = ft.Button(
-            "开始扫描",
+            content=self._scan_text,
             icon=ft.Icons.SEARCH,
             on_click=self._on_scan_click,
         )
@@ -108,7 +109,7 @@ class ScanPanel(ft.Container):
 
     def _on_scan_click(self, e=None):
         """点击开始/取消扫描"""
-        if self._scan_btn.text == "开始扫描":
+        if self._scan_text.value == "开始扫描":
             directory = self._dir_field.value
             if not directory:
                 self._show_snackbar("请先选择视频目录", AppColors.WARNING)
@@ -116,7 +117,7 @@ class ScanPanel(ft.Container):
             if not os.path.isdir(directory):
                 self._show_snackbar(f"目录不存在: {directory}", AppColors.ERROR)
                 return
-            self._scan_btn.text = "取消扫描"
+            self._scan_text.value = "取消扫描"
             self._scan_btn.icon = ft.Icons.CANCEL
             self._dir_field.disabled = True
             self._browse_btn.disabled = True
@@ -129,7 +130,7 @@ class ScanPanel(ft.Container):
 
     def reset_scan_button(self):
         """恢复扫描按钮"""
-        self._scan_btn.text = "开始扫描"
+        self._scan_text.value = "开始扫描"
         self._scan_btn.icon = ft.Icons.SEARCH
         self._dir_field.disabled = False
         self._browse_btn.disabled = False
@@ -162,14 +163,15 @@ class ActionPanel(ft.Container):
         self._on_export = on_export
         self._app = app
 
+        self._download_text = ft.Text("一键匹配")
         self._download_btn = ft.Button(
-            "一键匹配",
+            content=self._download_text,
             icon=ft.Icons.DOWNLOAD,
             disabled=True,
             on_click=lambda e: self._on_download(),
         )
         self._export_btn = ft.OutlinedButton(
-            "导出缺失列表",
+            content=ft.Text("导出缺失列表"),
             icon=ft.Icons.FILE_DOWNLOAD,
             disabled=True,
             on_click=lambda e: self._on_export(),
@@ -199,11 +201,11 @@ class ActionPanel(ft.Container):
     def set_download_mode(self, active: bool):
         """切换下载模式"""
         if active:
-            self._download_btn.text = "下载中..."
+            self._download_text.value = "下载中..."
             self._download_btn.icon = ft.Icons.HOURGLASS_BOTTOM
             self._download_btn.disabled = True
         else:
-            self._download_btn.text = "一键匹配"
+            self._download_text.value = "一键匹配"
             self._download_btn.icon = ft.Icons.DOWNLOAD
         self.update()
 

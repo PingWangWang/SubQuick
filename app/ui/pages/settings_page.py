@@ -130,7 +130,7 @@ class SettingsPage(ft.Column):
                         controls=[
                             self._api_key_field,
                             ft.Button(
-                                "验证",
+                                content=ft.Text("验证"),
                                 on_click=self._validate_api_key,
                             ),
                         ],

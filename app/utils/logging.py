@@ -83,6 +83,7 @@ def setup_logging(
     # 文件处理器（带轮转）
     file_handler = logging.handlers.RotatingFileHandler(
         filename=str(log_file),
+        mode="w",
         maxBytes=max_bytes,
         backupCount=backup_count,
         encoding="utf-8",

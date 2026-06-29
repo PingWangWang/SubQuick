@@ -7,34 +7,12 @@ Usage:
 """
 
 import sys
-import threading
 import traceback
 
 import flet as ft
 
 from app.ui.app import SubQuickApp
 from app.utils.logging import ensure_logging, get_logger
-
-
-def _center_window_async(window_title: str, width: int, height: int) -> None:
-    """等待窗口出现后将其居中（后台线程，避免闪现）"""
-    import ctypes
-    import ctypes.wintypes
-    import time
-
-    # 短暂等待 Flutter 窗口创建
-    for _ in range(30):
-        hwnd = ctypes.windll.user32.FindWindowW(None, window_title)
-        if hwnd:
-            screen_w = ctypes.windll.user32.GetSystemMetrics(0)
-            screen_h = ctypes.windll.user32.GetSystemMetrics(1)
-            x = max(0, (screen_w - width) // 2)
-            y = max(0, (screen_h - height) // 2)
-            # SWP_NOZORDER | SWP_NOSIZE = 0x0001 | 0x0002 = 0x0003
-            # 只移动位置，不改变大小和 Z 顺序
-            ctypes.windll.user32.SetWindowPos(hwnd, 0, x, y, 0, 0, 0x0003)
-            break
-        time.sleep(0.05)
 
 
 def main(page: ft.Page):
@@ -87,13 +65,6 @@ def main(page: ft.Page):
 
 
 if __name__ == "__main__":
-    # 后台线程：窗口创建后立即居中，避免先左上角再跳转的闪现
-    threading.Thread(
-        target=_center_window_async,
-        args=("SubQuick - 快速字幕匹配工具", 1440, 810),
-        daemon=True,
-    ).start()
-
     try:
         ft.run(main)
     except Exception as e:
