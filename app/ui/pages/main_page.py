@@ -169,9 +169,13 @@ class ActionPanel(ft.Container):
             padding=ft.Padding(left=8, right=8, top=8, bottom=8),
         )
 
-    def set_buttons_enabled(self, enabled: bool):
-        """设置操作按钮启用状态"""
+    def set_download_enabled(self, enabled: bool):
+        """设置一键匹配按钮启用状态"""
         self._download_btn.disabled = not enabled
+        self.update()
+
+    def set_export_enabled(self, enabled: bool):
+        """设置导出按钮启用状态"""
         self._export_btn.disabled = not enabled
         self.update()
 
@@ -307,7 +311,8 @@ class MainPage(ft.Column):
         if videos and cached_dir:
             self._video_table.set_videos(videos)
             has_missing = any(v.subtitle_status == "missing" for v in videos)
-            self._action_panel.set_buttons_enabled(has_missing)
+            self._action_panel.set_download_enabled(False)
+            self._action_panel.set_export_enabled(has_missing)
             self._update_status(f"上次扫描: {cached_dir} ({len(videos)} 部视频)")
 
     # ── 扫描流程 ──────────────────────────────────────────
@@ -323,7 +328,8 @@ class MainPage(ft.Column):
         self._progress_panel.update_scan("准备扫描...", 0, 0)
         self._progress_panel.update()
         self._video_table.set_videos([])
-        self._action_panel.set_buttons_enabled(False)
+        self._action_panel.set_download_enabled(False)
+        self._action_panel.set_export_enabled(False)
         self._update_status("正在扫描...")
 
         # 记住本次选择的目录
@@ -397,7 +403,8 @@ class MainPage(ft.Column):
 
         # 更新操作按钮状态
         has_missing = result.missing_subtitle_count > 0
-        self._action_panel.set_buttons_enabled(has_missing)
+        self._action_panel.set_download_enabled(False)
+        self._action_panel.set_export_enabled(has_missing)
 
         # 更新状态栏
         self._update_status(result.summary())
@@ -423,7 +430,7 @@ class MainPage(ft.Column):
         """选中视频变化时更新下载按钮"""
         selected = self._video_table.get_selected_videos()
         missing_selected = [v for v in selected if v.subtitle_status == "missing"]
-        self._action_panel.set_buttons_enabled(len(missing_selected) > 0)
+        self._action_panel.set_download_enabled(len(missing_selected) > 0)
 
     def _start_download(self) -> None:
         """一键匹配：下载所有选中的缺失字幕视频"""
