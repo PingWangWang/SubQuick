@@ -93,7 +93,7 @@ class VideoTable(ft.Container):
                         width=120,
                         options=[ft.dropdown.Option("全部")],
                         value="全部",
-                        on_change=self._on_filter_change,
+                        on_select=self._on_filter_change,
                     ),
                     ft.Container(expand=True),
                     self._count_text,
@@ -117,7 +117,12 @@ class VideoTable(ft.Container):
 
         super().__init__(
             content=content_column,
-            border=ft.border.all(1, ft.Colors.GREY_300),
+            border=ft.Border(
+                top=ft.BorderSide(1, ft.Colors.GREY_300),
+                right=ft.BorderSide(1, ft.Colors.GREY_300),
+                bottom=ft.BorderSide(1, ft.Colors.GREY_300),
+                left=ft.BorderSide(1, ft.Colors.GREY_300),
+            ),
             border_radius=8,
             padding=8,
         )
@@ -131,7 +136,7 @@ class VideoTable(ft.Container):
             if col_def["sortable"]:
                 # 可排序列带排序图标
                 icon = ft.Icon(
-                    name=ft.Icons.ARROW_UPWARD,
+                    ft.Icons.ARROW_UPWARD,
                     size=14,
                     visible=False,
                     color=AppColors.PRIMARY,
@@ -144,7 +149,6 @@ class VideoTable(ft.Container):
                         ft.Text(col_def["label"], size=13, weight=ft.FontWeight.W_600),
                         icon,
                     ],
-                    on_click=lambda e, k=col_def["key"]: self._on_sort(k),
                 )
                 columns.append(
                     ft.DataColumn(

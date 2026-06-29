@@ -75,7 +75,7 @@ class ScanPanel(ft.Container):
                         ft.dropdown.Option("5"),
                     ],
                     value=str(app.settings.max_subtitles_per_video),
-                    on_change=self._on_max_subtitles_change,
+                    on_select=self._on_max_subtitles_change,
                 ),
                 self._scan_btn,
             ],

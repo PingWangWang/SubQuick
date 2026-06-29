@@ -24,7 +24,7 @@ LOG_LEVELS = {
 }
 
 # 默认配置
-DEFAULT_LOG_LEVEL = "info"
+DEFAULT_LOG_LEVEL = "debug"
 DEFAULT_MAX_BYTES = 5 * 1024 * 1024  # 5 MB
 DEFAULT_BACKUP_COUNT = 3
 LOG_FORMAT = "[%(asctime)s] [%(levelname)s] [%(name)s:%(lineno)d] %(message)s"

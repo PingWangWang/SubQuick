@@ -94,7 +94,12 @@ class SearchDialog(ft.AlertDialog):
                     # 结果列表
                     ft.Container(
                         content=self._results_column,
-                        border=ft.border.all(1, ft.Colors.GREY_300),
+                        border=ft.Border(
+                            top=ft.BorderSide(1, ft.Colors.GREY_300),
+                            right=ft.BorderSide(1, ft.Colors.GREY_300),
+                            bottom=ft.BorderSide(1, ft.Colors.GREY_300),
+                            left=ft.BorderSide(1, ft.Colors.GREY_300),
+                        ),
                         border_radius=8,
                         padding=8,
                         expand=True,

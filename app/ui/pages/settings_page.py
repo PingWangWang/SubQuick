@@ -67,7 +67,7 @@ class SettingsPage(ft.Column):
                 ft.dropdown.Option("es", "Español"),
             ],
             value=self._settings.language_priority.primary,
-            on_change=self._on_lang_change,
+            on_select=self._on_lang_change,
         )
 
         # 左栏 — 字幕匹配设置
@@ -93,7 +93,12 @@ class SettingsPage(ft.Column):
                 ],
             ),
             padding=12,
-            border=ft.border.all(1, ft.Colors.GREY_300),
+            border=ft.Border(
+                top=ft.BorderSide(1, ft.Colors.GREY_300),
+                right=ft.BorderSide(1, ft.Colors.GREY_300),
+                bottom=ft.BorderSide(1, ft.Colors.GREY_300),
+                left=ft.BorderSide(1, ft.Colors.GREY_300),
+            ),
             border_radius=8,
         )
 
@@ -106,8 +111,9 @@ class SettingsPage(ft.Column):
             width=350,
             on_change=self._on_api_key_change,
         )
+        provider = self._settings.subtitle_providers.get("opensubtitles")
         self._api_status = ft.Text(
-            "未验证" if not self._settings.subtitle_providers.get("opensubtitles", {}).get("api_key_validated") else "有效 ✅",
+            "未验证" if not (provider and provider.api_key_validated) else "有效 ✅",
             size=12,
             color=ft.Colors.GREY_500,
         )
@@ -143,7 +149,12 @@ class SettingsPage(ft.Column):
                 ],
             ),
             padding=12,
-            border=ft.border.all(1, ft.Colors.GREY_300),
+            border=ft.Border(
+                top=ft.BorderSide(1, ft.Colors.GREY_300),
+                right=ft.BorderSide(1, ft.Colors.GREY_300),
+                bottom=ft.BorderSide(1, ft.Colors.GREY_300),
+                left=ft.BorderSide(1, ft.Colors.GREY_300),
+            ),
             border_radius=8,
         )
 
@@ -186,7 +197,12 @@ class SettingsPage(ft.Column):
                 ],
             ),
             padding=12,
-            border=ft.border.all(1, ft.Colors.GREY_300),
+            border=ft.Border(
+                top=ft.BorderSide(1, ft.Colors.GREY_300),
+                right=ft.BorderSide(1, ft.Colors.GREY_300),
+                bottom=ft.BorderSide(1, ft.Colors.GREY_300),
+                left=ft.BorderSide(1, ft.Colors.GREY_300),
+            ),
             border_radius=8,
         )
 
@@ -199,7 +215,7 @@ class SettingsPage(ft.Column):
                 ft.dropdown.Option("dark", "深色模式"),
             ],
             value=self._settings.theme,
-            on_change=self._on_theme_change,
+            on_select=self._on_theme_change,
         )
         ui_card = ft.Container(
             content=ft.Column(
@@ -217,7 +233,12 @@ class SettingsPage(ft.Column):
                 ],
             ),
             padding=12,
-            border=ft.border.all(1, ft.Colors.GREY_300),
+            border=ft.Border(
+                top=ft.BorderSide(1, ft.Colors.GREY_300),
+                right=ft.BorderSide(1, ft.Colors.GREY_300),
+                bottom=ft.BorderSide(1, ft.Colors.GREY_300),
+                left=ft.BorderSide(1, ft.Colors.GREY_300),
+            ),
             border_radius=8,
         )
 
@@ -236,7 +257,12 @@ class SettingsPage(ft.Column):
                 ],
             ),
             padding=12,
-            border=ft.border.all(1, ft.Colors.GREY_300),
+            border=ft.Border(
+                top=ft.BorderSide(1, ft.Colors.GREY_300),
+                right=ft.BorderSide(1, ft.Colors.GREY_300),
+                bottom=ft.BorderSide(1, ft.Colors.GREY_300),
+                left=ft.BorderSide(1, ft.Colors.GREY_300),
+            ),
             border_radius=8,
         )
 

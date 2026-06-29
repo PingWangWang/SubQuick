@@ -265,7 +265,7 @@ class WizardPage(ft.Column):
                 ft.dropdown.Option("ko", "한국어"),
             ],
             value=self._primary_lang,
-            on_change=lambda e: setattr(self, '_primary_lang', e.control.value),
+            on_select=lambda e: setattr(self, '_primary_lang', e.control.value),
         )
         max_sub_slider = ft.Slider(
             min=1, max=5, divisions=4,
