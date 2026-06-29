@@ -14,15 +14,15 @@ from app.ui.components.status_badge import StatusBadge
 from app.ui.theme import AppColors
 
 
-# 列定义
+# 列定义（不设固定宽度，由 DataTable 自动分配）
 COLUMN_DEFS = [
-    {"key": "select", "label": "", "width": 40, "sortable": False},
-    {"key": "file_name", "label": "文件名", "width": 260, "sortable": True},
-    {"key": "extension", "label": "格式", "width": 60, "sortable": True},
-    {"key": "formatted_size", "label": "大小", "width": 80, "sortable": True},
-    {"key": "duration_str", "label": "时长", "width": 70, "sortable": True},
-    {"key": "subtitle_status", "label": "字幕状态", "width": 100, "sortable": True},
-    {"key": "directory", "label": "目录", "width": 200, "sortable": True},
+    {"key": "select", "label": "", "sortable": False},
+    {"key": "file_name", "label": "文件名", "sortable": True},
+    {"key": "extension", "label": "格式", "sortable": True},
+    {"key": "formatted_size", "label": "大小", "sortable": True},
+    {"key": "duration_str", "label": "时长", "sortable": True},
+    {"key": "subtitle_status", "label": "字幕状态", "sortable": True},
+    {"key": "directory", "label": "目录", "sortable": True},
 ]
 
 
@@ -105,18 +105,20 @@ class VideoTable(ft.Container):
         # 主体内容
         content_column = ft.Column(
             spacing=4,
+            expand=True,
             controls=[
                 toolbar,
                 ft.Column(
                     controls=[self._table],
                     scroll=ft.ScrollMode.AUTO,
-                    height=400,
+                    expand=True,
                 ),
             ],
         )
 
         super().__init__(
             content=content_column,
+            expand=True,
             border=ft.Border(
                 top=ft.BorderSide(1, ft.Colors.GREY_300),
                 right=ft.BorderSide(1, ft.Colors.GREY_300),

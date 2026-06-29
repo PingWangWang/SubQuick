@@ -295,6 +295,7 @@ class SettingsPage(ft.Column):
         super().__init__(
             spacing=0,
             expand=True,
+            scroll=ft.ScrollMode.AUTO,
             controls=[header, body],
         )
 

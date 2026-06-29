@@ -65,19 +65,6 @@ class ScanPanel(ft.Container):
                 self._dir_field,
                 self._browse_btn,
                 ft.Container(expand=True),
-                ft.Dropdown(
-                    label="字幕数/视频",
-                    width=120,
-                    options=[
-                        ft.dropdown.Option("1"),
-                        ft.dropdown.Option("2"),
-                        ft.dropdown.Option("3"),
-                        ft.dropdown.Option("4"),
-                        ft.dropdown.Option("5"),
-                    ],
-                    value=str(app.settings.max_subtitles_per_video),
-                    on_select=self._on_max_subtitles_change,
-                ),
                 self._scan_btn,
             ],
         )
@@ -138,11 +125,6 @@ class ScanPanel(ft.Container):
 
     def get_directory(self) -> str:
         return self._dir_field.value or ""
-
-    def _on_max_subtitles_change(self, e):
-        """每视频字幕数变更"""
-        self._app.settings.max_subtitles_per_video = int(e.control.value)
-        self._app.settings_service.save(self._app.settings)
 
     def _show_snackbar(self, message: str, color: str = AppColors.ERROR):
         """显示通知消息"""
@@ -294,6 +276,7 @@ class MainPage(ft.Column):
                 ft.Container(
                     content=ft.Column(
                         spacing=8,
+                        expand=True,
                         controls=[
                             self._scan_panel,
                             self._progress_panel,
@@ -313,22 +296,33 @@ class MainPage(ft.Column):
     def _on_scan_start(self, directory: str) -> None:
         """开始扫描（在后台线程中执行）"""
         if directory is None:
-            # 取消扫描
             self._cancel_scan = True
             return
 
         self._cancel_scan = False
         self._progress_panel.set_scan_mode()
         self._progress_panel.update_scan("准备扫描...", 0, 0)
+        self._progress_panel.update()
         self._video_table.set_videos([])
         self._action_panel.set_buttons_enabled(False)
         self._update_status("正在扫描...")
+        self.update()
 
-        def cancel_check() -> bool:
-            return self._cancel_scan
+        page = self._app.page
 
         def progress_callback(path: str, current: int, total: int, phase: str):
-            self._progress_panel.update_scan(path, current, total)
+            async def _update_ui():
+                self._progress_panel.update_scan(path, current, total)
+                self._progress_panel.update()
+                page.update()
+            page.run_task(_update_ui)
+
+        def _run_on_main(func, *args):
+            """在后台线程中调用，将 func 调度到主线程执行"""
+            async def wrapper():
+                func(*args)
+                page.update()
+            page.run_task(wrapper)
 
         def scan_thread():
             try:
@@ -342,20 +336,18 @@ class MainPage(ft.Column):
                     file_filter=filter_obj,
                     recursive=True,
                     progress_callback=progress_callback,
-                    cancel_flag=cancel_check,
+                    cancel_flag=lambda: self._cancel_scan,
                 )
                 self._scan_result = result
-
-                # 回到主线程更新 UI
-                self._after_scan(result)
+                _run_on_main(self._after_scan, result)
             except ScanCancelled:
-                self._after_scan_cancelled()
+                _run_on_main(self._after_scan_cancelled)
             except FileNotFoundError as e:
-                self._after_scan_error(str(e))
+                _run_on_main(self._after_scan_error, str(e))
             except PermissionError as e:
-                self._after_scan_error(str(e))
+                _run_on_main(self._after_scan_error, str(e))
             except Exception as e:
-                self._after_scan_error(f"扫描出错: {e}")
+                _run_on_main(self._after_scan_error, f"扫描出错: {e}")
 
         threading.Thread(target=scan_thread, daemon=True).start()
 
@@ -430,11 +422,15 @@ class MainPage(ft.Column):
         tasks = self._download_manager.add_tasks(selected_missing)
 
         def progress_callback(task, completed, total):
-            self._progress_panel.update_download(
-                task.video.file_name if task else "",
-                completed, total,
-                task.status_enum.display_name() if task else "",
-            )
+            async def _update_ui():
+                self._progress_panel.update_download(
+                    task.video.file_name if task else "",
+                    completed, total,
+                    task.status_enum.display_name() if task else "",
+                )
+                self._progress_panel.update()
+                self.update()
+            self._app.page.run_task(_update_ui)
 
         def download_thread():
             try:
