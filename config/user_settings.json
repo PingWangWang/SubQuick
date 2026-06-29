@@ -47,7 +47,9 @@
     },
     "ui": {
         "theme": "light",
-        "language": "zh"
+        "language": "zh",
+        "font_family": "Microsoft YaHei",
+        "font_size": 14
     },
     "first_run": false
 }

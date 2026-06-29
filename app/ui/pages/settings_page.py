@@ -217,6 +217,33 @@ class SettingsPage(ft.Column):
             value=self._settings.theme,
             on_select=self._on_theme_change,
         )
+
+        # 字体选择
+        font_options = [
+            ft.dropdown.Option("", "默认"),
+            ft.dropdown.Option("Microsoft YaHei", "微软雅黑"),
+            ft.dropdown.Option("SimSun", "宋体"),
+            ft.dropdown.Option("SimHei", "黑体"),
+            ft.dropdown.Option("DengXian", "等线"),
+            ft.dropdown.Option("KaiTi", "楷体"),
+            ft.dropdown.Option("PingFang SC", "苹方"),
+            ft.dropdown.Option("Noto Sans SC", "Noto Sans SC"),
+        ]
+        self._font_dropdown = ft.Dropdown(
+            width=200,
+            options=font_options,
+            value=self._settings.ui.font_family,
+            on_select=self._on_font_family_change,
+        )
+
+        # 字号选择
+        self._font_size_dropdown = ft.Dropdown(
+            width=120,
+            options=[ft.dropdown.Option(str(s), f"{s}px") for s in [10, 12, 13, 14, 15, 16, 18, 20, 22, 24]],
+            value=str(self._settings.ui.font_size),
+            on_select=self._on_font_size_change,
+        )
+
         ui_card = ft.Container(
             content=ft.Column(
                 spacing=8,
@@ -228,6 +255,20 @@ class SettingsPage(ft.Column):
                         controls=[
                             ft.Text("主题模式:", size=13),
                             self._theme_dropdown,
+                        ],
+                    ),
+                    ft.Row(
+                        spacing=8,
+                        controls=[
+                            ft.Text("字体:", size=13),
+                            self._font_dropdown,
+                        ],
+                    ),
+                    ft.Row(
+                        spacing=8,
+                        controls=[
+                            ft.Text("字号:", size=13),
+                            self._font_size_dropdown,
                         ],
                     ),
                 ],
@@ -368,6 +409,18 @@ class SettingsPage(ft.Column):
     def _on_theme_change(self, e):
         theme = e.control.value
         self._app.set_theme(theme)
+
+    def _on_font_family_change(self, e):
+        self._settings.ui.font_family = e.control.value
+        self._app._apply_theme()
+        self._save_settings()
+        self._app.page.update()
+
+    def _on_font_size_change(self, e):
+        self._settings.ui.font_size = int(e.control.value)
+        self._app._apply_theme()
+        self._save_settings()
+        self._app.page.update()
 
     def _open_log_dir(self, e=None):
         """打开日志目录"""

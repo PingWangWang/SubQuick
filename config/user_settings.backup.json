@@ -1,6 +1,8 @@
 {
     "_version": "1.0.0",
-    "video_directories": [],
+    "video_directories": [
+        "D:/迅雷下载"
+    ],
     "video_formats": [
         "mp4",
         "mkv",

@@ -220,6 +220,8 @@ class UIConfig:
     """界面设置"""
     theme: str = "system"
     language: str = "zh"
+    font_family: str = ""
+    font_size: int = 14
 
     def __post_init__(self):
         self.validate()
@@ -228,12 +230,16 @@ class UIConfig:
         errors: list[str] = []
         if self.theme not in VALID_THEMES:
             errors.append(f"无效的主题模式: {self.theme}，有效值: {VALID_THEMES}")
+        if not (8 <= self.font_size <= 32):
+            errors.append(f"字号超出范围: {self.font_size}")
         return errors
 
     def to_dict(self) -> dict:
         return {
             "theme": self.theme,
             "language": self.language,
+            "font_family": self.font_family,
+            "font_size": self.font_size,
         }
 
     @classmethod
@@ -241,6 +247,8 @@ class UIConfig:
         return cls(
             theme=data.get("theme", "system"),
             language=data.get("language", "zh"),
+            font_family=data.get("font_family", ""),
+            font_size=data.get("font_size", 14),
         )
 
 

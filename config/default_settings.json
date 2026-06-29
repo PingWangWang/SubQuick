@@ -33,7 +33,9 @@
     },
     "ui": {
         "theme": "system",
-        "language": "zh"
+        "language": "zh",
+        "font_family": "",
+        "font_size": 14
     },
     "first_run": true
 }

@@ -31,10 +31,15 @@ class SubQuickApp:
         elif theme_mode == "dark":
             self.page.theme_mode = ft.ThemeMode.DARK
 
-        self.page.theme = ft.Theme(
+        t = ft.Theme(
             color_scheme_seed=AppColors.PRIMARY,
             use_material3=True,
         )
+        # 应用字体设置
+        ui = self.settings.ui
+        if ui.font_family:
+            t.font_family = ui.font_family
+        self.page.theme = t
 
     def set_theme(self, theme: str) -> None:
         """切换主题模式"""
