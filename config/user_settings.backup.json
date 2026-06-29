@@ -46,10 +46,10 @@
         ]
     },
     "ui": {
-        "theme": "light",
+        "theme": "system",
         "language": "zh",
         "font_family": "Microsoft YaHei",
-        "font_size": 14
+        "font_size": 16
     },
     "first_run": false
 }

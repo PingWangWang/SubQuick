@@ -31,6 +31,9 @@ class SubQuickApp:
         elif theme_mode == "dark":
             self.page.theme_mode = ft.ThemeMode.DARK
 
+        # 页面背景色跟随主题
+        self.page.bgcolor = ft.Colors.SURFACE
+
         t = ft.Theme(
             color_scheme_seed=AppColors.PRIMARY,
             use_material3=True,

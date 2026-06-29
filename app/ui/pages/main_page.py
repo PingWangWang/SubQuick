@@ -207,9 +207,9 @@ class MainPage(ft.Column):
 
         # ── 创建子组件 ──────────────────────────────────
 
-        # Header
+        # Header（背景色跟随深浅主题）
         self._header = ft.Container(
-            bgcolor=ft.Colors.SURFACE,
+            bgcolor=ft.Colors.with_opacity(0.85, ft.Colors.SURFACE),
             content=ft.Row(
                 controls=[
                     ft.Row(
@@ -228,6 +228,9 @@ class MainPage(ft.Column):
                 ],
             ),
             padding=ft.Padding(left=16, right=8, top=8, bottom=4),
+            border=ft.Border(
+                bottom=ft.BorderSide(1, ft.Colors.with_opacity(0.12, ft.Colors.GREY_500)),
+            ),
         )
 
         # 扫描面板

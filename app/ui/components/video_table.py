@@ -51,13 +51,11 @@ class VideoTable(ft.Container):
         self._videos: list[VideoFile] = []
         self._filtered_videos: list[VideoFile] = []
         self._selected_indices: set[int] = set()
+        self._row_checkboxes: list[ft.Checkbox] = []  # 每行的 checkbox 引用
         self._sort_column: str = ""
         self._sort_ascending: bool = True
         self._filter_format: str = "全部"
-        self._row_containers: list[ft.Container] = []  # 用于刷新行
-
-        # 全选复选框
-        self._select_all_cb = ft.Checkbox(tristate=False, on_change=self._on_select_all)
+        self._row_containers: list[ft.Container] = []
         self._count_text = ft.Text("共 0 部视频", size=13, color=ft.Colors.GREY_600)
 
         # 排序指示器
@@ -186,6 +184,7 @@ class VideoTable(ft.Container):
                 reverse=reverse,
             )
 
+        self._sync_selection()
         self._rebuild_rows()
         self._update_count()
 
@@ -221,15 +220,23 @@ class VideoTable(ft.Container):
     def _rebuild_rows(self) -> None:
         rows = []
         self._row_containers = []
+        self._row_checkboxes = []
         for idx, video in enumerate(self._filtered_videos):
             is_selected = idx in self._selected_indices
-            row = self._build_row(video, idx, is_selected)
+            row, cb = self._build_row(video, idx, is_selected)
             rows.append(row)
             self._row_containers.append(row)
+            self._row_checkboxes.append(cb)
         self._rows_column.controls = rows
         self.update()
 
-    def _build_row(self, video: VideoFile, idx: int, selected: bool) -> ft.Container:
+    def _sync_selection(self) -> None:
+        """从当前勾选框同步到 _selected_indices（排序/筛选前调用）"""
+        self._selected_indices = {
+            i for i, cb in enumerate(self._row_checkboxes) if cb.value
+        }
+
+    def _build_row(self, video: VideoFile, idx: int, selected: bool) -> tuple:
         """构建一行数据"""
         # 行背景色
         bg = None
@@ -238,7 +245,7 @@ class VideoTable(ft.Container):
         elif video.subtitle_status == "exists":
             bg = ft.Colors.with_opacity(0.03, AppColors.SUCCESS)
 
-        cb = ft.Checkbox(value=selected, on_change=lambda e, i=idx: self._on_row_select(i, e.control.value))
+        cb = ft.Checkbox(value=selected)
 
         display_name = video.file_name
         if len(display_name) > 40:
@@ -271,7 +278,7 @@ class VideoTable(ft.Container):
             padding=ft.Padding(left=0, right=0, top=6, bottom=6),
             border=ft.Border(bottom=ft.BorderSide(0.5, ft.Colors.GREY_200)),
         )
-        return row
+        return row, cb
 
     # ── 选择管理 ──────────────────────────────────────────
 
@@ -280,51 +287,35 @@ class VideoTable(ft.Container):
             self._selected_indices.add(idx)
         else:
             self._selected_indices.discard(idx)
-        self._sync_select_all()
-        self._update_count()
-        self._on_selection_change and self._on_selection_change()
-
-    def _on_select_all(self, e) -> None:
-        if e.control.value:
-            self._selected_indices = set(range(len(self._filtered_videos)))
-        else:
-            self._selected_indices.clear()
-        self._rebuild_rows()
         self._update_count()
         self._on_selection_change and self._on_selection_change()
 
     def _on_toggle_select_all(self, e=None) -> None:
         """点击「全选」按钮切换全选状态"""
-        if self._select_all_cb.value:
+        if self._row_checkboxes and all(cb.value for cb in self._row_checkboxes):
+            # 全部已选中 → 取消全选
+            for cb in self._row_checkboxes:
+                cb.value = False
             self._selected_indices.clear()
         else:
+            # 全部选中
+            for cb in self._row_checkboxes:
+                cb.value = True
             self._selected_indices = set(range(len(self._filtered_videos)))
-        self._select_all_cb.value = not self._select_all_cb.value
-        self._rebuild_rows()
+        self.update()
         self._update_count()
         self._on_selection_change and self._on_selection_change()
 
     def _invert_selection(self, e=None) -> None:
-        all_indices = set(range(len(self._filtered_videos)))
-        self._selected_indices = all_indices - self._selected_indices
+        for cb in self._row_checkboxes:
+            cb.value = not cb.value
         self._rebuild_rows()
         self._update_count()
-        self._sync_select_all()
         self._on_selection_change and self._on_selection_change()
-
-    def _sync_select_all(self) -> None:
-        total = len(self._filtered_videos)
-        selected = len(self._selected_indices)
-        if total == 0:
-            self._select_all_cb.value = False
-        elif selected == total:
-            self._select_all_cb.value = True
-        else:
-            self._select_all_cb.value = None
 
     def _update_count(self) -> None:
         total = len(self._filtered_videos)
-        selected = len(self._selected_indices)
+        selected = sum(1 for cb in self._row_checkboxes if cb.value)
         parts = [f"共 {total} 部"]
         if self._filter_format != "全部":
             parts.insert(0, f"[{self._filter_format}]")
@@ -341,10 +332,12 @@ class VideoTable(ft.Container):
     # ── 对外接口 ──────────────────────────────────────────
 
     def get_selected_videos(self) -> list[VideoFile]:
-        return [self._filtered_videos[i] for i in sorted(self._selected_indices)]
+        return [
+            self._filtered_videos[i] for i, cb in enumerate(self._row_checkboxes)
+            if cb.value
+        ]
 
     def clear_selection(self) -> None:
         self._selected_indices.clear()
-        self._sync_select_all()
         self._rebuild_rows()
         self._update_count()
