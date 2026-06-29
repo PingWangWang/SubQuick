@@ -86,6 +86,11 @@ class VideoFile:
     duration: float = 0.0
     width: int = 0
     height: int = 0
+    video_codec: str = ""       # 视频编码器 (h264, hevc, av1...)
+    audio_codec: str = ""       # 音频编码器 (aac, ac3, dts...)
+    audio_channels: int = 0     # 音频声道数
+    frame_rate: float = 0.0     # 帧率
+    bitrate: int = 0            # 总码率 (bps)
     has_subtitle: bool = False
     subtitle_status: str = "unknown"
     subtitle_count: int = 0
@@ -149,6 +154,41 @@ class VideoFile:
         if self.width > 0 and self.height > 0:
             return f"{self.width}x{self.height}"
         return ""
+
+    @property
+    def video_codec_label(self) -> str:
+        """返回简短编码标签"""
+        m = {"h264": "H.264", "hevc": "HEVC", "av1": "AV1", "mpeg4": "MPEG-4",
+             "vp9": "VP9", "avc1": "H.264", "h265": "HEVC"}
+        return m.get(self.video_codec.lower(), self.video_codec.upper()) if self.video_codec else ""
+
+    @property
+    def audio_codec_label(self) -> str:
+        m = {"aac": "AAC", "ac3": "AC3", "dts": "DTS", "mp3": "MP3",
+             "eac3": "EAC3", "opus": "Opus", "flac": "FLAC"}
+        return m.get(self.audio_codec.lower(), self.audio_codec.upper()) if self.audio_codec else ""
+
+    @property
+    def audio_channels_str(self) -> str:
+        if not self.audio_channels:
+            return ""
+        if self.audio_channels == 1:
+            return "单声道"
+        if self.audio_channels == 2:
+            return "立体声"
+        return f"{self.audio_channels}ch"
+
+    @property
+    def bitrate_str(self) -> str:
+        if not self.bitrate:
+            return ""
+        kbps = self.bitrate // 1000
+        return f"{kbps}kbps"
+
+    @property
+    def frame_rate_str(self) -> str:
+        """返回帧率字符串"""
+        return f"{self.frame_rate:.0f}fps" if self.frame_rate > 0 else ""
 
     @property
     def quality_label(self) -> str:
@@ -263,6 +303,11 @@ class VideoFile:
             "height": self.height,
             "resolution": self.resolution,
             "quality": self.quality_label,
+            "video_codec": self.video_codec,
+            "audio_codec": self.audio_codec,
+            "audio_channels": self.audio_channels,
+            "frame_rate": self.frame_rate,
+            "bitrate": self.bitrate,
             "has_subtitle": self.has_subtitle,
             "subtitle_status": self.subtitle_status,
             "subtitle_count": self.subtitle_count,

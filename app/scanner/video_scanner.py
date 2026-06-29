@@ -6,7 +6,9 @@
 
 from __future__ import annotations
 
+import json
 import os
+import subprocess
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -24,6 +26,109 @@ from app.utils.logging import get_logger
 
 
 logger = get_logger("scanner")
+
+
+# 缓存的 ffprobe 路径
+_ffprobe_path: Optional[str] = None
+
+
+def _find_ffprobe() -> Optional[str]:
+    """查找 ffprobe 可执行文件"""
+    global _ffprobe_path
+    if _ffprobe_path is not None:
+        return _ffprobe_path or None
+
+    import shutil
+
+    candidates = [
+        # 1. 项目自带完整 ffprobe（plugins/ffprobe.exe）
+        os.path.join(os.path.dirname(__file__), "..", "..", "plugins", "ffprobe.exe"),
+        "plugins/ffprobe.exe",
+        # 2. Chocolatey / 系统安装
+        os.path.join(os.environ.get("LOCALAPPDATA", ""),
+                     "UniGetUI", "Chocolatey", "bin", "ffprobe.exe"),
+        os.path.join(os.environ.get("ChocolateyInstall", ""),
+                     "bin", "ffprobe.exe"),
+        # 3. 系统 PATH
+        shutil.which("ffprobe") or "",
+        "ffprobe.exe",
+    ]
+
+    for c in candidates:
+        if c and os.path.isfile(c):
+            _ffprobe_path = c
+            logger.debug(f"ffprobe: {c}")
+            return c
+
+    _ffprobe_path = ""
+    logger.debug("ffprobe 未找到")
+    return None
+
+
+def extract_metadata(video_path: Path) -> dict:
+    """用 ffprobe 提取视频元数据
+
+    Returns:
+        dict with keys: duration, width, height, video_codec,
+                        audio_codec, audio_channels, frame_rate, bitrate
+    """
+    ffprobe = _find_ffprobe()
+    if not ffprobe:
+        logger.debug("ffprobe 未找到，跳过元数据提取")
+        return {}
+
+    try:
+        args = [
+            ffprobe, "-v", "quiet", "-print_format", "json",
+            "-show_format", "-show_streams", str(video_path),
+        ]
+        proc = subprocess.run(args, capture_output=True, text=True, timeout=15)
+        if proc.returncode != 0:
+            return {}
+
+        data = json.loads(proc.stdout)
+        result: dict = {}
+
+        for stream in data.get("streams", []):
+            codec_type = stream.get("codec_type", "")
+            if codec_type == "video":
+                result.setdefault("duration", float(stream.get("duration", 0)))
+                result["width"] = stream.get("width", 0)
+                result["height"] = stream.get("height", 0)
+                result["video_codec"] = stream.get("codec_name", "")
+                # 帧率
+                fps_str = stream.get("r_frame_rate", "")
+                if fps_str and "/" in fps_str:
+                    num, den = fps_str.split("/")
+                    try:
+                        result["frame_rate"] = round(float(num) / float(den), 1)
+                    except (ValueError, ZeroDivisionError):
+                        pass
+                elif fps_str:
+                    try:
+                        result["frame_rate"] = float(fps_str)
+                    except ValueError:
+                        pass
+            elif codec_type == "audio":
+                result.setdefault("audio_codec", stream.get("codec_name", ""))
+                result["audio_channels"] = stream.get("channels", 0)
+
+        # format 层级
+        fmt = data.get("format", {})
+        if "duration" not in result:
+            result["duration"] = float(fmt.get("duration", 0))
+        if "bitrate" not in result:
+            bitrate = fmt.get("bit_rate", "")
+            if bitrate:
+                result["bitrate"] = int(bitrate)
+
+        return result
+    except subprocess.TimeoutExpired:
+        logger.debug(f"ffprobe 超时: {video_path}")
+        return {}
+    except Exception as e:
+        logger.debug(f"ffprobe 提取失败 {video_path}: {e}")
+        return {}
 
 
 # 进度回调类型：当前文件路径, 已处理数, 总数, 当前阶段描述
@@ -228,12 +333,22 @@ def _do_scan(
                 sub_files = find_subtitle_files(entry)
                 sub_count = len(sub_files)
 
+                # 尝试提取视频/音频元数据
+                meta = extract_metadata(entry)
+
                 video = VideoFile(
                     path=entry,
                     file_name=entry.name,
                     extension=entry.suffix.lower(),
                     file_size=entry.stat().st_size,
-                    duration=0.0,  # Phase 3 通过 ffprobe 补充
+                    duration=meta.get("duration", 0.0),
+                    width=meta.get("width", 0),
+                    height=meta.get("height", 0),
+                    video_codec=meta.get("video_codec", ""),
+                    audio_codec=meta.get("audio_codec", ""),
+                    audio_channels=meta.get("audio_channels", 0),
+                    frame_rate=meta.get("frame_rate", 0.0),
+                    bitrate=meta.get("bitrate", 0),
                     has_subtitle=sub_count > 0,
                     subtitle_status="exists" if sub_count > 0 else "missing",
                     subtitle_count=sub_count,

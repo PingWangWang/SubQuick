@@ -16,13 +16,19 @@ from app.ui.theme import AppColors
 # 列定义
 # flex: 空间分配权重（0 = 不伸缩，按内容宽度）
 COLUMN_DEFS = [
-    {"key": "select",    "label": "",       "flex": 0, "sortable": False},
-    {"key": "file_name", "label": "文件名",  "flex": 4, "sortable": True},
-    {"key": "extension", "label": "格式",    "flex": 1, "sortable": True},
-    {"key": "formatted_size", "label": "大小", "flex": 1, "sortable": True},
-    {"key": "duration_str", "label": "时长",  "flex": 1, "sortable": True},
+    {"key": "select",    "label": "",        "flex": 0, "sortable": False},
+    {"key": "file_name", "label": "文件名",   "flex": 3, "sortable": True},
+    {"key": "resolution","label": "分辨率",   "flex": 1, "sortable": True},
+    {"key": "quality",   "label": "画质",     "flex": 1, "sortable": True},
+    {"key": "video_codec_label", "label": "视频编码", "flex": 1, "sortable": True},
+    {"key": "frame_rate", "label": "帧率",    "flex": 1, "sortable": True},
+    {"key": "audio_codec_label","label":"音频编码","flex":1, "sortable": True},
+    {"key": "audio_channels_str","label":"声道","flex":1, "sortable": True},
+    {"key": "bitrate_str", "label": "码率",   "flex": 1, "sortable": True},
+    {"key": "formatted_size", "label": "大小","flex": 1, "sortable": True},
+    {"key": "duration_str", "label": "时长",   "flex": 1, "sortable": True},
     {"key": "subtitle_status", "label": "字幕状态", "flex": 2, "sortable": True},
-    {"key": "directory", "label": "目录",    "flex": 3, "sortable": True},
+    {"key": "directory", "label": "目录",     "flex": 2, "sortable": True},
 ]
 
 
@@ -114,6 +120,10 @@ class VideoTable(ft.Container):
                     ft.VerticalDivider(width=1),
                     ft.Button(content=ft.Text("反选"), on_click=self._invert_selection),
                     ft.VerticalDivider(width=1),
+                    ft.Button(content=ft.Text("删除选中"), on_click=self._delete_selected),
+                    ft.VerticalDivider(width=1),
+                    ft.Button(content=ft.Text("清空"), on_click=self._clear_all),
+                    ft.VerticalDivider(width=1),
                     self._filter_dropdown,
                     ft.Container(expand=True),
                     self._count_text,
@@ -146,10 +156,17 @@ class VideoTable(ft.Container):
 
     # ── 数据设置 ──────────────────────────────────────────
 
-    def set_videos(self, videos: list[VideoFile]) -> None:
-        self._videos = videos
+    def set_videos(self, videos: list[VideoFile], merge: bool = True) -> None:
+        """设置视频数据。merge=True 时按路径去重更新，新增追加。"""
+        if merge and self._videos:
+            existing = {str(v.path): v for v in self._videos}
+            for v in videos:
+                existing[str(v.path)] = v  # 更新或新增
+            self._videos = list(existing.values())
+        else:
+            self._videos = videos
         self._selected_indices.clear()
-        self._build_filter_options(videos)
+        self._build_filter_options(self._videos)
         self._apply_filter()
 
     def _build_filter_options(self, videos: list[VideoFile]) -> None:
@@ -191,7 +208,13 @@ class VideoTable(ft.Container):
     def _get_sort_key(self, video: VideoFile, column: str):
         m = {
             "file_name": video.file_name.lower(),
-            "extension": video.extension,
+            "resolution": video.width,
+            "quality": video.height,
+            "video_codec_label": video.video_codec,
+            "frame_rate": video.frame_rate,
+            "audio_codec_label": video.audio_codec,
+            "audio_channels_str": video.audio_channels,
+            "bitrate_str": video.bitrate,
             "formatted_size": video.file_size,
             "duration_str": video.duration,
             "subtitle_status": video.subtitle_status,
@@ -265,13 +288,19 @@ class VideoTable(ft.Container):
                 vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 controls=[
                     ft.Container(content=cb, width=40),
-                    _build_data_cell(ft.Text(display_name, size=12), flex=4,
+                    _build_data_cell(ft.Text(display_name, size=12), flex=3,
                         on_click=lambda e, v=video: self._on_double_click(v) if self._on_double_click else None),
-                    _build_data_cell(ft.Text(video.extension.lstrip(".").upper(), size=12), flex=1),
+                    _build_data_cell(ft.Text(video.resolution, size=12), flex=1),
+                    _build_data_cell(ft.Text(video.quality_label, size=12), flex=1),
+                    _build_data_cell(ft.Text(video.video_codec_label, size=11), flex=1),
+                    _build_data_cell(ft.Text(video.frame_rate_str, size=12), flex=1),
+                    _build_data_cell(ft.Text(video.audio_codec_label, size=11), flex=1),
+                    _build_data_cell(ft.Text(video.audio_channels_str, size=11), flex=1),
+                    _build_data_cell(ft.Text(video.bitrate_str, size=11), flex=1),
                     _build_data_cell(ft.Text(video.formatted_size, size=12), flex=1),
                     _build_data_cell(ft.Text(video.duration_str, size=12), flex=1),
                     _build_data_cell(status_badge, flex=2),
-                    _build_data_cell(ft.Text(display_dir, size=11, color=ft.Colors.GREY_500, italic=True), flex=3),
+                    _build_data_cell(ft.Text(display_dir, size=11, color=ft.Colors.GREY_500, italic=True), flex=2),
                 ],
             ),
             bgcolor=bg,
@@ -347,7 +376,30 @@ class VideoTable(ft.Container):
             if cb.value
         ]
 
+    def _delete_selected(self, e=None) -> None:
+        """删除选中的行"""
+        selected = {
+            str(self._filtered_videos[i].path) for i in self._selected_indices
+        }
+        if not selected:
+            return
+        self._videos = [v for v in self._videos if str(v.path) not in selected]
+        self._selected_indices.clear()
+        self._build_filter_options(self._videos)
+        self._apply_filter()
+
+    def _clear_all(self, e=None) -> None:
+        """清空所有记录"""
+        self._videos = []
+        self._filtered_videos = []
+        self._selected_indices.clear()
+        self._rows_column.controls = []
+        self._row_checkboxes = []
+        self._update_count()
+        self._on_selection_change and self._on_selection_change()
+
     def clear_selection(self) -> None:
         self._selected_indices.clear()
         self._rebuild_rows()
         self._update_count()
+

@@ -148,7 +148,7 @@ class ActionPanel(ft.Container):
             on_click=lambda e: self._on_download(),
         )
         self._export_btn = ft.OutlinedButton(
-            content=ft.Text("导出缺失列表"),
+            content=ft.Text("导出列表"),
             icon=ft.Icons.FILE_DOWNLOAD,
             disabled=True,
             on_click=lambda e: self._on_export(),
@@ -312,7 +312,7 @@ class MainPage(ft.Column):
             self._video_table.set_videos(videos)
             has_missing = any(v.subtitle_status == "missing" for v in videos)
             self._action_panel.set_download_enabled(False)
-            self._action_panel.set_export_enabled(has_missing)
+            self._action_panel.set_export_enabled(True)
             self._update_status(f"上次扫描: {cached_dir} ({len(videos)} 部视频)")
 
     # ── 扫描流程 ──────────────────────────────────────────
@@ -404,7 +404,7 @@ class MainPage(ft.Column):
         # 更新操作按钮状态
         has_missing = result.missing_subtitle_count > 0
         self._action_panel.set_download_enabled(False)
-        self._action_panel.set_export_enabled(has_missing)
+        self._action_panel.set_export_enabled(True)
 
         # 更新状态栏
         self._update_status(result.summary())
@@ -588,34 +588,34 @@ class MainPage(ft.Column):
                     message=f"已下载 {success_count} 个字幕到桌面",
                 )
 
-    # ── 导出缺失列表 ──────────────────────────────────────
+    # ── 导出列表 ──────────────────────────────────────────
 
     def _export_missing_list(self) -> None:
-        """导出缺失字幕的视频列表为 CSV"""
-        if not self._scan_result:
+        """导出所有视频列表为 CSV"""
+        videos = self._video_table._filtered_videos
+        if not videos:
+            videos = self._video_table._videos
+        if not videos:
+            self._show_snackbar("没有视频可导出", AppColors.WARNING)
             return
 
-        missing = [v for v in self._scan_result.video_files if v.subtitle_status == "missing"]
-        if not missing:
-            self._show_snackbar("没有缺失字幕的视频可导出", AppColors.WARNING)
-            return
-
-        # 生成 CSV
-        import csv
-        import io
+        import csv, os, io
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(["文件名", "格式", "大小", "时长", "目录"])
-        for v in missing:
-            writer.writerow([v.file_name, v.extension, v.formatted_size, v.duration_str, v.directory])
+        writer.writerow(["文件名", "分辨率", "画质", "视频编码", "帧率",
+                         "音频编码", "声道", "码率", "大小", "时长", "字幕状态", "目录"])
+        for v in videos:
+            writer.writerow([v.file_name, v.resolution, v.quality_label,
+                            v.video_codec_label, v.frame_rate_str, v.audio_codec_label,
+                            v.audio_channels_str, v.bitrate_str, v.formatted_size,
+                            v.duration_str, v.subtitle_status, v.directory])
 
-        # 写入桌面
         desktop = os.path.join(os.path.expanduser("~"), "Desktop")
-        file_path = os.path.join(desktop, "SubQuick_缺失字幕列表.csv")
+        file_path = os.path.join(desktop, "SubQuick_视频列表.csv")
         with open(file_path, "w", encoding="utf-8-sig", newline="") as f:
             f.write(output.getvalue())
 
-        self._show_snackbar(f"已导出: {file_path}", AppColors.SUCCESS)
+        self._show_snackbar(f"已导出 {len(videos)} 部视频: {file_path}", AppColors.SUCCESS)
 
     # ── 辅助方法 ──────────────────────────────────────────
 
