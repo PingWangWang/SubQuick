@@ -15,6 +15,19 @@ from app.ui.app import SubQuickApp
 from app.utils.logging import ensure_logging, get_logger
 
 
+def _center_window(page: ft.Page, width: int, height: int) -> None:
+    """将窗口居中于当前屏幕"""
+    try:
+        import ctypes
+        user32 = ctypes.windll.user32
+        screen_w = user32.GetSystemMetrics(0)
+        screen_h = user32.GetSystemMetrics(1)
+        page.window.left = max(0, (screen_w - width) // 2)
+        page.window.top = max(0, (screen_h - height) // 2)
+    except Exception:
+        pass  # 非 Windows 或获取失败时保持默认位置
+
+
 def main(page: ft.Page):
     # 初始化日志系统
     logger = ensure_logging()
@@ -26,6 +39,7 @@ def main(page: ft.Page):
     page.window_min_width = 1280
     page.window_min_height = 720
     page.window_resizable = True
+    _center_window(page, 1440, 810)
     page.title = "SubQuick - 快速字幕匹配工具"
     page.padding = 0
     page.spacing = 0
