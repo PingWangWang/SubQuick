@@ -11,7 +11,7 @@
 - 📁 **设置视频目录** — 选择一个或多个文件夹作为扫描目标
 - 🔍 **递归全遍历扫描** — 自动扫描所选目录及所有子目录，检测视频字幕缺失情况
 - 📋 **视频详情列表** — 展示文件名、所在目录、格式、大小、时长、字幕状态等信息
-- 🌐 **多源在线匹配** — 通过 OpenSubtitles 等字幕源接口检索并下载字幕
+- 🌐 **多源在线匹配** — 支持 OpenSubtitles、射手网、subdl、subliminal 等多种字幕源，在设置中自由切换
 - ⬇ **一键下载** — 自动匹配最佳字幕，保存至视频同级目录
 - 🔢 **自定义匹配数量** — 每个视频支持下载 1~5 个字幕文件
 - 🌍 **语言优先级** — 设置首选语言，未匹配到时自动降级（中文 → 英文）
@@ -77,7 +77,8 @@
 |------|------|------|
 | GUI 框架 | [Flet](https://flet.dev) | 基于 Flutter 的 Python GUI 框架，Material Design 3 |
 | 网络请求 | `requests` | HTTP 客户端 |
-| 字幕 API | OpenSubtitles.com v2 | 全球最大开源字幕数据库 |
+| 字幕 API | OpenSubtitles.com v2 / 伪射手网(assrt.net) / subdl / subliminal | 多种字幕源可选，支持插件扩展 |
+| 第三方库加载 | `plugins/` 目录 | 用户可将 .whl 文件放入 plugins/ 目录加载 |
 | 打包分发 | [PyInstaller](https://pyinstaller.org) | 打包为单 exe，用户无需安装 Python |
 
 ---

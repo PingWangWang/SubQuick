@@ -441,9 +441,16 @@ class MainPage(ft.Column):
             self._show_snackbar("请先勾选需要匹配字幕的视频", AppColors.WARNING)
             return
 
-        # 检查 API Key
-        if not self._app.settings.api_key:
-            self._show_snackbar("请先在设置中配置 OpenSubtitles API Key", AppColors.WARNING)
+        # 检查 API Key（对需要 Key 的 provider）
+        active = self._app.settings.active_provider
+        provider_cfg = self._app.settings.subtitle_providers.get(active, {})
+        api_key = provider_cfg.api_key if hasattr(provider_cfg, 'api_key') else ""
+
+        # OpenSubtitles 和 伪射手网 需要 API Key/Token
+        need_key_providers = ("opensubtitles", "shooter")
+        if active in need_key_providers and not api_key:
+            name_map = {"opensubtitles": "OpenSubtitles API Key", "shooter": "伪射手网 Token"}
+            self._show_snackbar(f"请先在设置中配置 {name_map.get(active, 'API Key')}", AppColors.WARNING)
             return
 
         # 切换到下载模式
@@ -452,12 +459,19 @@ class MainPage(ft.Column):
         self._progress_panel.update_download("准备中...", 0, len(selected_missing))
         self._update_status(f"开始下载 {len(selected_missing)} 部字幕...")
 
-        # 创建下载任务
+        # 创建下载任务（使用 registry 选择 provider）
         config = DownloadConfig(
             max_subtitles_per_video=self._app.settings.max_subtitles_per_video,
             language_priority=self._app.settings.language_priority.fallback_chain,
         )
-        self._download_manager = DownloadManager(config=config)
+        proxy_cfg = self._app.settings.proxy
+        proxy = {"url": proxy_cfg.url} if proxy_cfg and proxy_cfg.enabled else None
+        self._download_manager = DownloadManager(
+            config=config,
+            provider_names=[active],
+            api_key=api_key,
+            proxy=proxy,
+        )
 
         tasks = self._download_manager.add_tasks(selected_missing)
 

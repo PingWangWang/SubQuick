@@ -13,12 +13,17 @@ import flet as ft
 
 from app.ui.app import SubQuickApp
 from app.utils.logging import ensure_logging, get_logger
+from app.downloader.registry import init_plugins
 
 
 def main(page: ft.Page):
     # 初始化日志系统
     logger = ensure_logging()
     logger.info("SubQuick 启动")
+
+    # 加载 plugins/ 目录中的第三方库
+    init_plugins("plugins")
+    logger.info("plugins 目录已加载")
 
     # 配置窗口
     page.window_width = 1440

@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from app.downloader.base import BaseProvider, SearchParams
-from app.downloader.opensubtitles import OpenSubtitlesProvider
+from app.downloader.registry import create_provider, list_providers
 from app.models.task import DownloadTask, TaskStatus, BatchProgress
 from app.models.video import VideoFile
 from app.utils.logging import get_logger
@@ -53,11 +53,29 @@ class DownloadManager:
         self,
         config: Optional[DownloadConfig] = None,
         providers: Optional[list[BaseProvider]] = None,
+        provider_names: Optional[list[str]] = None,
+        api_key: str = "",
+        proxy: Optional[dict] = None,
     ):
         self.config = config or DownloadConfig()
-        self.providers = providers or [
-            OpenSubtitlesProvider(),
-        ]
+        if providers is not None:
+            self.providers = providers
+        elif provider_names:
+            self.providers = []
+            for name in provider_names:
+                p = create_provider(name, api_key=api_key, proxy=proxy)
+                if p is not None:
+                    self.providers.append(p)
+            if not self.providers:
+                # 回退：尝试所有已知 provider
+                for name in list_providers():
+                    p = create_provider(name, api_key=api_key, proxy=proxy)
+                    if p is not None:
+                        self.providers.append(p)
+        else:
+            # 默认使用 opensubtitles
+            p = create_provider("opensubtitles", api_key=api_key, proxy=proxy)
+            self.providers = [p] if p else []
         self._tasks: list[DownloadTask] = []
         self._cancelled: bool = False
         self._lock = threading.Lock()

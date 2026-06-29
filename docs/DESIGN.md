@@ -43,7 +43,9 @@
 | R08 | 匹配下载进度展示 | P0 | 下载过程中显示实时进度条 |
 | R09 | 设置单视频匹配字幕数 | P0 | 用户可设置 1~5，控制每个视频下载几个字幕文件 |
 | R10 | 字幕语言优先级设置 | P0 | 用户首选语言 → 汉语 → 英语，逐级降级匹配 |
-| R11 | 多字幕源支持（扩展） | P1 | 设计插件式架构，支持 OpenSubtitles 等 |
+| R11 | 多字幕源支持（扩展） | P1 | 插件式架构，支持 OpenSubtitles、射手网、subdl、subliminal 等 |
+| R25 | 字幕源切换 | P1 | 用户在设置界面可选择使用哪个字幕源 |
+| R26 | 第三方库加载 | P2 | 支持从 plugins/ 目录加载第三方字幕库 |
 
 ### 1.2 用户未明示但应补充的需求
 
@@ -221,6 +223,10 @@ SubQuick/
 │   │   ├── __init__.py
 │   │   ├── base.py                  # 抽象基类 BaseProvider
 │   │   ├── opensubtitles.py         # OpenSubtitles.com API v2
+│   │   ├── shooter.py              # 伪射手网 (assrt.net) API
+│   │   ├── subdl_provider.py       # subdl 多平台聚合（需安装 subdl）
+│   │   ├── subliminal_provider.py  # subliminal 行业标准库（需安装 subliminal）
+│   │   ├── registry.py             # Provider 注册表与选择器
 │   │   └── manager.py               # 下载管理器（调度、队列、并发）
 │   │
 │   ├── matcher/                     # 匹配层

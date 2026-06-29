@@ -103,20 +103,53 @@ class SettingsPage(ft.Column):
         )
 
         # 左栏 — 字幕源配置
+        # 字幕源选择下拉框
+        provider_options = {
+            "opensubtitles": "OpenSubtitles.com",
+            "shooter": "伪射手网 (assrt.net)",
+            "subdl": "subdl（多平台聚合）",
+            "subliminal": "subliminal（行业标准）",
+        }
+        self._provider_dropdown = ft.Dropdown(
+            width=300,
+            options=[
+                ft.dropdown.Option(key, label)
+                for key, label in provider_options.items()
+            ],
+            value=self._settings.active_provider,
+            on_select=self._on_provider_change,
+        )
+
+        # API Key 输入（动态根据选中的 provider 显示）
+        active = self._settings.active_provider
+        active_cfg = self._settings.subtitle_providers.get(active, {})
+        api_key_hints = {
+            "opensubtitles": "输入 OpenSubtitles API Key",
+            "shooter": "输入伪射手网 Token（需注册获取）",
+            "subdl": "subdl 无需 API Key",
+            "subliminal": "subliminal 无需 API Key",
+        }
         self._api_key_field = ft.TextField(
-            hint_text="输入 OpenSubtitles API Key",
-            value=self._settings.api_key,
-            password=True,
+            hint_text=api_key_hints.get(active, "输入 API Key"),
+            value=active_cfg.api_key if hasattr(active_cfg, 'api_key') else "",
+            password=active == "opensubtitles",
             can_reveal_password=True,
             width=350,
             on_change=self._on_api_key_change,
         )
-        provider = self._settings.subtitle_providers.get("opensubtitles")
         self._api_status = ft.Text(
-            "未验证" if not (provider and provider.api_key_validated) else "有效 ✅",
+            "未验证" if not (hasattr(active_cfg, 'api_key_validated') and active_cfg.api_key_validated) else "有效 ✅",
             size=12,
             color=ft.Colors.GREY_500,
         )
+
+        # provider 说明文字
+        provider_desc = {
+            "opensubtitles": "全球最大开源字幕库，需要注册账号获取免费 API Key",
+            "shooter": "伪射手网 (assrt.net)，国内中文字幕源，需注册获取 Token",
+            "subdl": "封装多平台字幕搜索，需安装 subdl 库到 plugins/ 目录",
+            "subliminal": "业界标准字幕库，支持十余家字幕源，需安装 subliminal",
+        }
 
         providers_card = ft.Container(
             content=ft.Column(
@@ -124,7 +157,10 @@ class SettingsPage(ft.Column):
                 controls=[
                     ft.Text("字幕源配置", size=16, weight=ft.FontWeight.BOLD),
                     ft.Divider(height=1),
-                    ft.Text("OpenSubtitles.com", size=13),
+                    ft.Text("选择字幕源:", size=13),
+                    self._provider_dropdown,
+                    ft.Divider(height=1),
+                    ft.Text(provider_options.get(active, active), size=13, weight=ft.FontWeight.W_600),
                     ft.Row(
                         spacing=8,
                         controls=[
@@ -142,9 +178,11 @@ class SettingsPage(ft.Column):
                             self._api_status,
                         ],
                     ),
-                    ft.TextButton(
-                        "没有 Key？去 opensubtitles.com 注册",
-                        url="https://www.opensubtitles.com/",
+                    ft.Text(
+                        provider_desc.get(active, ""),
+                        size=11,
+                        color=ft.Colors.GREY_500,
+                        italic=True,
                     ),
                 ],
             ),
@@ -321,7 +359,7 @@ class SettingsPage(ft.Column):
                     ft.Text("关于 SubQuick", size=16, weight=ft.FontWeight.BOLD),
                     ft.Divider(height=1),
                     ft.Text("快速字幕匹配工具 — 自动扫描本地视频并匹配下载字幕。", size=12),
-                    ft.Text("数据来源: OpenSubtitles.org", size=12, color=ft.Colors.GREY_500),
+                    ft.Text("数据来源: OpenSubtitles, 伪射手网(assrt.net), subdl, subliminal 等多字幕源", size=12, color=ft.Colors.GREY_500),
                     ft.Row(
                         spacing=4,
                         controls=[
@@ -416,12 +454,40 @@ class SettingsPage(ft.Column):
         self._save_settings()
 
     def _on_api_key_change(self, e):
-        self._settings.api_key = e.control.value.strip()
+        active = self._settings.active_provider
+        if active not in self._settings.subtitle_providers:
+            from app.models.settings import ProviderConfig
+            self._settings.subtitle_providers[active] = ProviderConfig()
+        self._settings.subtitle_providers[active].api_key = e.control.value.strip()
+        self._settings.subtitle_providers[active].api_key_validated = False
         self._save_settings()
 
+    def _on_provider_change(self, e):
+        """切换字幕源"""
+        new_provider = e.control.value
+        if new_provider and new_provider != self._settings.active_provider:
+            self._settings.active_provider = new_provider
+            self._save_settings()
+            # 刷新页面以更新 API Key 字段
+            self._app.page.clean()
+            from app.ui.pages.settings_page import SettingsPage
+            self._app.page.add(SettingsPage(self._app))
+            self._app.page.update()
+
     def _validate_api_key(self, e=None):
-        """验证 API Key"""
-        if not self._settings.api_key:
+        """验证当前选中 provider 的 API Key"""
+        active = self._settings.active_provider
+        cfg = self._settings.subtitle_providers.get(active, {})
+        api_key = cfg.api_key if hasattr(cfg, 'api_key') else ""
+
+        # subdl/subliminal 无需 API Key（通过 plugins 安装即可使用）
+        if active in ("subdl", "subliminal"):
+            self._api_status.value = "无需 API Key ✅"
+            self._api_status.color = AppColors.SUCCESS
+            self._api_status.update()
+            return
+
+        if not api_key:
             self._api_status.value = "请输入 API Key"
             self._api_status.color = AppColors.ERROR
             self._api_status.update()
@@ -432,17 +498,23 @@ class SettingsPage(ft.Column):
         self._api_status.update()
 
         try:
-            from app.downloader import OpenSubtitlesProvider
-            provider = OpenSubtitlesProvider(api_key=self._settings.api_key)
+            if active == "shooter":
+                from app.downloader import ShooterProvider
+                provider = ShooterProvider(api_key=api_key)
+            else:
+                from app.downloader import OpenSubtitlesProvider
+                provider = OpenSubtitlesProvider(api_key=api_key)
             valid = provider.validate_api_key()
             if valid:
                 self._api_status.value = "有效 ✅"
                 self._api_status.color = AppColors.SUCCESS
-                self._settings.subtitle_providers["opensubtitles"].api_key_validated = True
+                if active in self._settings.subtitle_providers:
+                    self._settings.subtitle_providers[active].api_key_validated = True
             else:
                 self._api_status.value = "无效 ❌"
                 self._api_status.color = AppColors.ERROR
-                self._settings.subtitle_providers["opensubtitles"].api_key_validated = False
+                if active in self._settings.subtitle_providers:
+                    self._settings.subtitle_providers[active].api_key_validated = False
         except Exception as ex:
             self._api_status.value = f"验证失败: {ex}"
             self._api_status.color = AppColors.ERROR

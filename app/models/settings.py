@@ -271,7 +271,11 @@ class Settings:
     matching: MatchingConfig = field(default_factory=MatchingConfig)
     subtitle_providers: dict[str, ProviderConfig] = field(default_factory=lambda: {
         "opensubtitles": ProviderConfig(),
+        "shooter": ProviderConfig(enabled=True),
+        "subdl": ProviderConfig(enabled=False),
+        "subliminal": ProviderConfig(enabled=False),
     })
+    active_provider: str = "opensubtitles"
     proxy: ProxyConfig = field(default_factory=ProxyConfig)
     ignore_list: IgnoreList = field(default_factory=IgnoreList)
     ui: UIConfig = field(default_factory=UIConfig)
@@ -325,6 +329,7 @@ class Settings:
                 name: provider.to_dict()
                 for name, provider in self.subtitle_providers.items()
             },
+            "active_provider": self.active_provider,
             "proxy": self.proxy.to_dict(),
             "ignore_list": self.ignore_list.to_dict(),
             "ui": self.ui.to_dict(),
@@ -347,7 +352,9 @@ class Settings:
             subtitle_providers={
                 name: ProviderConfig.from_dict(cfg)
                 for name, cfg in data.get("subtitle_providers", {}).items()
-            } or {"opensubtitles": ProviderConfig()},
+            } or {"opensubtitles": ProviderConfig(), "shooter": ProviderConfig(enabled=True),
+                   "subdl": ProviderConfig(enabled=False), "subliminal": ProviderConfig(enabled=False)},
+            active_provider=data.get("active_provider", "opensubtitles"),
             proxy=ProxyConfig.from_dict(data.get("proxy", {})),
             ignore_list=IgnoreList.from_dict(data.get("ignore_list", {})),
             ui=UIConfig.from_dict(data.get("ui", {})),
@@ -398,16 +405,21 @@ class Settings:
     @property
     def api_key(self) -> str:
         providers = self.subtitle_providers
+        # 优先返回当前激活的 provider 的 API Key
+        if self.active_provider in providers:
+            return providers[self.active_provider].api_key
+        # 兼容旧配置
         if "opensubtitles" in providers:
             return providers["opensubtitles"].api_key
         return ""
 
     @api_key.setter
     def api_key(self, value: str) -> None:
-        if "opensubtitles" not in self.subtitle_providers:
-            self.subtitle_providers["opensubtitles"] = ProviderConfig()
-        self.subtitle_providers["opensubtitles"].api_key = value
-        self.subtitle_providers["opensubtitles"].api_key_validated = False
+        # 设置当前激活的 provider 的 API Key
+        if self.active_provider not in self.subtitle_providers:
+            self.subtitle_providers[self.active_provider] = ProviderConfig()
+        self.subtitle_providers[self.active_provider].api_key = value
+        self.subtitle_providers[self.active_provider].api_key_validated = False
 
     @property
     def theme(self) -> str:

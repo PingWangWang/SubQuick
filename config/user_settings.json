@@ -28,8 +28,14 @@
             "enabled": true,
             "api_key": "",
             "api_key_validated": false
+        },
+        "shooter": {
+            "enabled": true,
+            "api_key": "TFD997f1xTzB2mPudMakdWPH5dGZV4KQ",
+            "api_key_validated": true
         }
     },
+    "active_provider": "shooter",
     "proxy": {
         "enabled": false,
         "type": "http",
