@@ -39,7 +39,7 @@ class WizardPage(ft.Column):
         header = ft.Container(
             content=ft.Row(
                 controls=[
-                    ft.Icon(ft.Icons.ROCET_LAUNCH, size=32, color=AppColors.PRIMARY),
+                    ft.Icon(ft.Icons.ROCKET_LAUNCH, size=32, color=AppColors.PRIMARY),
                     ft.Text("欢迎使用 SubQuick", size=28, weight=ft.FontWeight.BOLD),
                 ],
                 alignment=ft.MainAxisAlignment.CENTER,

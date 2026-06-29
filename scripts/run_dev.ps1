@@ -24,19 +24,26 @@ if (-not (Test-Path ".\.venv\Scripts\Activate.ps1")) {
 Write-Host "  ✅ 虚拟环境已激活" -ForegroundColor Green
 Write-Host ""
 
-# ── Step 2: 网络检查 ──────────────────────────────────
+$localFletZip = ".\plugins\flet\flet-windows.zip"
+$hasLocalFlet = Test-Path $localFletZip
+
+# ── Step 2: 网络检查（有本地 Flet 包则跳过）─────────────
 Write-Host "[2/5] 检查网络连通性..." -ForegroundColor Yellow
-try {
-    $result = python .\scripts\check_network.py 2>&1
-    $exitCode = $LASTEXITCODE
-    if ($exitCode -eq 0) {
-        Write-Host "  ✅ 网络连接正常" -ForegroundColor Green
-    } else {
-        Write-Host "  ⚠ 网络检查异常，请排查代理/VPN/防火墙设置" -ForegroundColor Yellow
-        Write-Host "  $result" -ForegroundColor Gray
+if ($hasLocalFlet) {
+    Write-Host "  ⏭ 已跳过（本地 Flet 引擎包存在）" -ForegroundColor Gray
+} else {
+    try {
+        $result = python .\scripts\check_network.py 2>&1
+        $exitCode = $LASTEXITCODE
+        if ($exitCode -eq 0) {
+            Write-Host "  ✅ 网络连接正常" -ForegroundColor Green
+        } else {
+            Write-Host "  ⚠ 网络检查异常，请排查代理/VPN/防火墙设置" -ForegroundColor Yellow
+            Write-Host "  $result" -ForegroundColor Gray
+        }
+    } catch {
+        Write-Host "  ⚠ 网络检查跳过（脚本异常）" -ForegroundColor Yellow
     }
-} catch {
-    Write-Host "  ⚠ 网络检查跳过（脚本异常）" -ForegroundColor Yellow
 }
 Write-Host ""
 
@@ -52,7 +59,6 @@ Write-Host "[4/5] 检查 Flet 运行环境..." -ForegroundColor Yellow
 $fletCache = "$env:LOCALAPPDATA\flet"
 $fletCacheHome = "$env:USERPROFILE\.flet"
 $fletClientDir = "$env:USERPROFILE\.flet\client"
-$localFletZip = ".\plugins\flet\flet-windows.zip"
 $cacheReady = $false
 
 if (Test-Path $fletCache) {
