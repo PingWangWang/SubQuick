@@ -238,7 +238,7 @@ class SettingsPage(ft.Column):
 
         # 字号选择
         self._font_size_dropdown = ft.Dropdown(
-            width=120,
+            width=200,
             options=[ft.dropdown.Option(str(s), f"{s}px") for s in [10, 12, 13, 14, 15, 16, 18, 20, 22, 24]],
             value=str(self._settings.ui.font_size),
             on_select=self._on_font_size_change,
@@ -252,22 +252,25 @@ class SettingsPage(ft.Column):
                     ft.Divider(height=1),
                     ft.Row(
                         spacing=8,
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
                         controls=[
-                            ft.Text("主题模式:", size=13),
+                            ft.Text("主题模式", size=13, width=60),
                             self._theme_dropdown,
                         ],
                     ),
                     ft.Row(
                         spacing=8,
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
                         controls=[
-                            ft.Text("字体:", size=13),
+                            ft.Text("字体", size=13, width=60),
                             self._font_dropdown,
                         ],
                     ),
                     ft.Row(
                         spacing=8,
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
                         controls=[
-                            ft.Text("字号:", size=13),
+                            ft.Text("字号", size=13, width=60),
                             self._font_size_dropdown,
                         ],
                     ),
@@ -307,6 +310,57 @@ class SettingsPage(ft.Column):
             border_radius=8,
         )
 
+        # ── 关于 ───────────────────────────────────────
+
+        self._update_status_text = ft.Text("", size=12, color=ft.Colors.GREY_500)
+
+        about_card = ft.Container(
+            content=ft.Column(
+                spacing=4,
+                controls=[
+                    ft.Text("关于 SubQuick", size=16, weight=ft.FontWeight.BOLD),
+                    ft.Divider(height=1),
+                    ft.Text("快速字幕匹配工具 — 自动扫描本地视频并匹配下载字幕。", size=12),
+                    ft.Text("数据来源: OpenSubtitles.org", size=12, color=ft.Colors.GREY_500),
+                    ft.Row(
+                        spacing=4,
+                        controls=[
+                            ft.Text("版本:", size=12, color=ft.Colors.GREY_500),
+                            ft.Text(f"v{self._settings.version}", size=12),
+                        ],
+                    ),
+                    ft.Row(
+                        spacing=4,
+                        controls=[
+                            ft.Text("许可:", size=12, color=ft.Colors.GREY_500),
+                            ft.Text("MIT License", size=12),
+                        ],
+                    ),
+                    ft.Divider(height=1),
+                    ft.Row(
+                        spacing=8,
+                        controls=[
+                            ft.Button(
+                                content=ft.Text("检查更新"),
+                                icon=ft.Icons.UPDATE,
+                                on_click=self._check_update,
+                            ),
+                            self._update_status_text,
+                        ],
+                    ),
+                    ft.Text("Copyright © 2026 SubQuick。仅供合法用途。", size=11, color=ft.Colors.GREY_400, italic=True),
+                ],
+            ),
+            padding=12,
+            border=ft.Border(
+                top=ft.BorderSide(1, ft.Colors.GREY_300),
+                right=ft.BorderSide(1, ft.Colors.GREY_300),
+                bottom=ft.BorderSide(1, ft.Colors.GREY_300),
+                left=ft.BorderSide(1, ft.Colors.GREY_300),
+            ),
+            border_radius=8,
+        )
+
         # ── 双栏布局 ───────────────────────────────────
 
         left_column = ft.Column(
@@ -317,27 +371,33 @@ class SettingsPage(ft.Column):
         right_column = ft.Column(
             spacing=12,
             expand=True,
-            controls=[scan_card, ui_card, other_card],
+            controls=[scan_card, ui_card, about_card],
         )
 
-        body = ft.Container(
-            content=ft.ResponsiveRow(
-                spacing=16,
-                columns={"sm": 12, "md": 6, "lg": 6},
-                controls=[
-                    ft.Column(col={"sm": 12, "md": 6, "lg": 6}, controls=[left_column]),
-                    ft.Column(col={"sm": 12, "md": 6, "lg": 6}, controls=[right_column]),
-                ],
-            ),
-            padding=ft.Padding(left=16, right=16, top=8),
+        # 可滚动的内容区（header 在外部，保持固定）
+        scroll_body = ft.Column(
+            spacing=0,
             expand=True,
+            scroll=ft.ScrollMode.AUTO,
+            controls=[
+                ft.Container(
+                    content=ft.ResponsiveRow(
+                        spacing=16,
+                        columns={"sm": 12, "md": 6, "lg": 6},
+                        controls=[
+                            ft.Column(col={"sm": 12, "md": 6, "lg": 6}, controls=[left_column]),
+                            ft.Column(col={"sm": 12, "md": 6, "lg": 6}, controls=[right_column]),
+                        ],
+                    ),
+                    padding=ft.Padding(left=16, right=16, top=8),
+                ),
+            ],
         )
 
         super().__init__(
             spacing=0,
             expand=True,
-            scroll=ft.ScrollMode.AUTO,
-            controls=[header, body],
+            controls=[header, scroll_body],
         )
 
     # ── 回调处理 ──────────────────────────────────────────
@@ -389,6 +449,59 @@ class SettingsPage(ft.Column):
 
         self._save_settings()
         self._api_status.update()
+
+    def _check_update(self, e=None) -> None:
+        """检查 GitHub Release 更新"""
+        import urllib.request
+        import json
+        import threading
+
+        self._update_status_text.value = "检查中..."
+        self._update_status_text.update()
+
+        def do_check():
+            try:
+                req = urllib.request.Request(
+                    "https://api.github.com/repos/PingWangWang/SubQuick/releases/latest",
+                    headers={"Accept": "application/vnd.github.v3+json"},
+                )
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    data = json.loads(resp.read().decode())
+
+                latest_tag = data.get("tag_name", "").lstrip("v")
+                current = self._settings.version
+
+                if latest_tag and latest_tag > current:
+                    msg = f"发现新版本 v{latest_tag}！当前: v{current}"
+                    btn_text = "前往下载"
+                    url = data.get("html_url", "")
+                elif latest_tag:
+                    msg = f"已是最新版本 v{current}"
+                    btn_text = ""
+                    url = ""
+                else:
+                    msg = "无法获取版本信息"
+                    btn_text = ""
+                    url = ""
+
+                def update_ui():
+                    self._update_status_text.value = msg
+                    self._update_status_text.color = AppColors.SUCCESS if "已是最新" in msg else AppColors.INFO
+                    self._update_status_text.update()
+                    if url:
+                        import webbrowser
+                        webbrowser.open(url)
+
+                self._app.page.run_thread(update_ui)
+
+            except Exception as ex:
+                def update_error():
+                    self._update_status_text.value = f"检查失败: {ex}"
+                    self._update_status_text.color = AppColors.ERROR
+                    self._update_status_text.update()
+                self._app.page.run_thread(update_error)
+
+        threading.Thread(target=do_check, daemon=True).start()
 
     def _on_formats_change(self, e):
         formats = [

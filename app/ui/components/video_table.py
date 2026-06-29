@@ -88,7 +88,7 @@ class VideoTable(ft.Container):
                 spacing=0,
                 vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 controls=[
-                    ft.Container(content=self._select_all_cb, width=40),
+                    ft.Container(width=40),  # 空位对齐数据行的 checkbox 列
                     *header_cells[1:],
                 ],
             ),
@@ -112,9 +112,9 @@ class VideoTable(ft.Container):
                 spacing=8,
                 vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 controls=[
-                    ft.Text("全选", size=13),
+                    ft.Button(content=ft.Text("全选"), on_click=self._on_toggle_select_all),
                     ft.VerticalDivider(width=1),
-                    ft.TextButton("反选", on_click=self._invert_selection),
+                    ft.Button(content=ft.Text("反选"), on_click=self._invert_selection),
                     ft.VerticalDivider(width=1),
                     self._filter_dropdown,
                     ft.Container(expand=True),
@@ -289,6 +289,17 @@ class VideoTable(ft.Container):
             self._selected_indices = set(range(len(self._filtered_videos)))
         else:
             self._selected_indices.clear()
+        self._rebuild_rows()
+        self._update_count()
+        self._on_selection_change and self._on_selection_change()
+
+    def _on_toggle_select_all(self, e=None) -> None:
+        """点击「全选」按钮切换全选状态"""
+        if self._select_all_cb.value:
+            self._selected_indices.clear()
+        else:
+            self._selected_indices = set(range(len(self._filtered_videos)))
+        self._select_all_cb.value = not self._select_all_cb.value
         self._rebuild_rows()
         self._update_count()
         self._on_selection_change and self._on_selection_change()

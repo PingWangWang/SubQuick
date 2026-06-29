@@ -21,6 +21,7 @@ from app.scanner import scan_directory, FileFilter, ScanResult, ScanCancelled
 from app.scanner.video_scanner import ProgressCallback
 from app.downloader import DownloadManager, DownloadConfig
 from app.services.settings_service import SettingsService
+from app.services.scan_cache import save_scan_cache, load_scan_cache
 
 
 class ScanPanel(ft.Container):
@@ -34,7 +35,7 @@ class ScanPanel(ft.Container):
         last_dir = app.settings.video_directories[-1] if app.settings.video_directories else ""
         self._dir_field = ft.TextField(
             hint_text="选择视频目录...",
-            width=500,
+            expand=True,
             read_only=True,
             value=last_dir,
             on_click=self._pick_directory,
@@ -51,13 +52,6 @@ class ScanPanel(ft.Container):
             on_click=self._on_scan_click,
         )
 
-        # 格式标签
-        self._formats_text = ft.Text(
-            "支持格式: MP4 MKV AVI MOV WMV",
-            size=12,
-            color=ft.Colors.GREY_500,
-        )
-
         # 内容行
         row1 = ft.Row(
             spacing=8,
@@ -66,14 +60,13 @@ class ScanPanel(ft.Container):
                 ft.Icon(ft.Icons.FOLDER, size=20),
                 self._dir_field,
                 self._browse_btn,
-                ft.Container(expand=True),
                 self._scan_btn,
             ],
         )
 
         content = ft.Column(
             spacing=4,
-            controls=[row1, self._formats_text],
+            controls=[row1],
         )
 
         super().__init__(
@@ -216,6 +209,7 @@ class MainPage(ft.Column):
 
         # Header
         self._header = ft.Container(
+            bgcolor=ft.Colors.SURFACE,
             content=ft.Row(
                 controls=[
                     ft.Row(
@@ -293,6 +287,26 @@ class MainPage(ft.Column):
             ],
         )
 
+    # ── 生命周期 ──────────────────────────────────────────
+
+    def did_mount(self):
+        """控件挂载到页面后，从缓存恢复上次扫描结果"""
+        # 延迟到所有子控件挂载完成后执行
+        import asyncio
+        async def _deferred():
+            await asyncio.sleep(0.05)
+            self._restore_scan_cache()
+        asyncio.get_event_loop().create_task(_deferred())
+
+    def _restore_scan_cache(self) -> None:
+        """从缓存恢复上次扫描结果"""
+        videos, cached_dir = load_scan_cache()
+        if videos and cached_dir:
+            self._video_table.set_videos(videos)
+            has_missing = any(v.subtitle_status == "missing" for v in videos)
+            self._action_panel.set_buttons_enabled(has_missing)
+            self._update_status(f"上次扫描: {cached_dir} ({len(videos)} 部视频)")
+
     # ── 扫描流程 ──────────────────────────────────────────
 
     def _on_scan_start(self, directory: str) -> None:
@@ -335,6 +349,8 @@ class MainPage(ft.Column):
                 page.update()
             page.run_task(wrapper)
 
+        _saved_dir = directory  # 闭包捕获扫描目录用于缓存
+
         def scan_thread():
             try:
                 filter_obj = FileFilter(
@@ -343,13 +359,16 @@ class MainPage(ft.Column):
                     ignore_directories=self._app.settings.ignore_list.directories,
                 )
                 result = scan_directory(
-                    directory=directory,
+                    directory=_saved_dir,
                     file_filter=filter_obj,
                     recursive=True,
                     progress_callback=progress_callback,
                     cancel_flag=lambda: self._cancel_scan,
                 )
                 self._scan_result = result
+                # 缓存扫描结果到本地
+                if result.video_files:
+                    save_scan_cache(result.video_files, _saved_dir)
                 _run_on_main(self._after_scan, result)
             except ScanCancelled:
                 _run_on_main(self._after_scan_cancelled)

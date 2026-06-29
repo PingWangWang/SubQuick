@@ -268,6 +268,23 @@ class VideoFile:
             "subtitle_count": self.subtitle_count,
         }
 
+    @classmethod
+    def from_dict(cls, data: dict) -> "VideoFile":
+        """从 to_dict() 输出的字典重建 VideoFile 实例"""
+        from pathlib import Path
+        return cls(
+            path=Path(data.get("path", "")),
+            file_name=data.get("file_name", ""),
+            extension=data.get("extension", ""),
+            file_size=data.get("file_size", 0),
+            duration=data.get("duration", 0.0),
+            width=data.get("width", 0),
+            height=data.get("height", 0),
+            has_subtitle=data.get("has_subtitle", False),
+            subtitle_status=data.get("subtitle_status", "unknown"),
+            subtitle_count=data.get("subtitle_count", 0),
+        )
+
     def __str__(self) -> str:
         return f"{self.file_name} ({self.formatted_size}, {self.duration_str})"
 

@@ -35,10 +35,28 @@ class SubQuickApp:
             color_scheme_seed=AppColors.PRIMARY,
             use_material3=True,
         )
-        # 应用字体设置
         ui = self.settings.ui
+
+        # 应用字体
         if ui.font_family:
             t.font_family = ui.font_family
+
+        # 全局字号（覆盖所有文本控件的默认大小）
+        fs = ui.font_size
+        t.text_theme = {
+            ft.TextThemeStyle.BODY_LARGE:   ft.TextStyle(size=fs + 2),
+            ft.TextThemeStyle.BODY_MEDIUM:  ft.TextStyle(size=fs),
+            ft.TextThemeStyle.BODY_SMALL:   ft.TextStyle(size=fs - 2),
+            ft.TextThemeStyle.LABEL_LARGE:  ft.TextStyle(size=fs + 2),
+            ft.TextThemeStyle.LABEL_MEDIUM: ft.TextStyle(size=fs),
+            ft.TextThemeStyle.LABEL_SMALL:  ft.TextStyle(size=fs - 2),
+            ft.TextThemeStyle.TITLE_LARGE:  ft.TextStyle(size=fs + 6),
+            ft.TextThemeStyle.TITLE_MEDIUM: ft.TextStyle(size=fs + 4),
+            ft.TextThemeStyle.TITLE_SMALL:  ft.TextStyle(size=fs + 2),
+            ft.TextThemeStyle.HEADLINE_LARGE: ft.TextStyle(size=fs + 10),
+            ft.TextThemeStyle.HEADLINE_MEDIUM: ft.TextStyle(size=fs + 8),
+            ft.TextThemeStyle.HEADLINE_SMALL: ft.TextStyle(size=fs + 6),
+        }
         self.page.theme = t
 
     def set_theme(self, theme: str) -> None:

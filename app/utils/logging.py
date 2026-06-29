@@ -80,6 +80,13 @@ def setup_logging(
 
     log_file = log_dir / "app.log"
 
+    # 清空上次的日志（保证每次启动从空白开始）
+    try:
+        if log_file.exists():
+            log_file.unlink()
+    except Exception:
+        pass
+
     # 文件处理器（带轮转）
     file_handler = logging.handlers.RotatingFileHandler(
         filename=str(log_file),
