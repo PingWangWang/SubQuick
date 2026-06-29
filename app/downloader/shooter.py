@@ -101,8 +101,12 @@ class ShooterProvider(BaseProvider):
         params: Optional[dict] = None,
         raw: bool = False,
     ) -> dict | bytes:
-        base = self.api_base.rstrip("/")
-        url = f"{base}{endpoint}"
+        # endpoint 可能是完整 URL（下载时），也可能是 API 路径（搜索时）
+        if endpoint.startswith("http"):
+            url = endpoint
+        else:
+            base = self.api_base.rstrip("/")
+            url = f"{base}{endpoint}"
         p = dict(params or {})
         if self.api_key:
             p.setdefault("token", self.api_key)

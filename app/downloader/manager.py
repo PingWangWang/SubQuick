@@ -177,24 +177,31 @@ class DownloadManager:
         return self.batch_progress
 
     def _process_task(self, task: DownloadTask) -> None:
-        """处理单个下载任务：搜索 → 选择 → 下载
-
-        Args:
-            task: 下载任务
-        """
+        """处理单个下载任务：搜索 → 选择 → 下载"""
+        video_name = task.video.file_name
+        logger.info(f"[下载] 开始处理: {video_name}")
         try:
             # 1. 搜索
             task.start_search()
-            task._log(f"开始搜索: {task.video.file_name}")
+            provider_names = [p.provider_name for p in self.providers]
+            logger.info(f"[下载] 搜索字幕 | 视频={video_name} | provider={provider_names} | 语言={self.config.language_priority}")
 
             search_result = self._search_subtitles(task.video)
             if self._cancelled:
+                logger.info(f"[下载] 已取消: {video_name}")
                 task.mark_cancelled()
                 return
 
-            if not search_result or len(search_result) == 0:
+            if not search_result:
+                logger.info(f"[下载] 未找到匹配字幕: {video_name}")
                 task.mark_skipped("未找到匹配字幕")
                 return
+
+            logger.info(f"[下载] 搜索到 {len(search_result)} 条候选字幕 | 视频={video_name}")
+            for i, sr in enumerate(search_result[:5]):
+                logger.info(f"[下载]   候选[{i}] id={sr.subtitle_id} 语言={sr.language} 评分={sr.score:.1f}")
+            if len(search_result) > 5:
+                logger.info(f"[下载]   ... 还有 {len(search_result)-5} 条")
 
             # 2. 选择最优字幕
             from app.matcher.subtitle_matcher import select_best_subtitles
@@ -205,14 +212,18 @@ class DownloadManager:
             )
 
             if not selected:
+                logger.info(f"[下载] 候选字幕均不符合语言优先级: {video_name} | 优先语言={self.config.language_priority}")
                 task.mark_skipped("未找到符合语言优先级的字幕")
                 return
 
             task.subtitles = selected
             task.total_subtitles = len(selected)
-            task._log(f"找到 {len(selected)} 个字幕")
+            logger.info(f"[下载] 选中 {len(selected)} 个字幕 | 视频={video_name}")
+            for i, sub in enumerate(selected):
+                logger.info(f"[下载]   选中[{i}] id={sub.subtitle_id} 语言={sub.language} 评分={sub.score:.1f}")
 
             if self._cancelled:
+                logger.info(f"[下载] 已取消: {video_name}")
                 task.mark_cancelled()
                 return
 
@@ -223,12 +234,20 @@ class DownloadManager:
                     task.mark_cancelled()
                     return
 
+                logger.info(f"[下载] 开始下载第 {idx+1}/{len(selected)} 个字幕 | id={sub.subtitle_id} 语言={sub.language}")
                 success = self._download_subtitle(task, sub, idx)
-                if not success and task.status_enum == TaskStatus.FAILED:
+                if not success:
+                    logger.warning(f"[下载] 第 {idx+1} 个字幕下载失败 | id={sub.subtitle_id}")
                     if task.can_retry():
-                        task._log(f"准备重试...")
+                        logger.info(f"[下载] 准备重试第 {idx+1} 个字幕...")
                         time.sleep(1)
                         success = self._download_subtitle(task, sub, idx)
+                        if success:
+                            logger.info(f"[下载] 重试成功 | id={sub.subtitle_id}")
+                        else:
+                            logger.warning(f"[下载] 重试仍失败 | id={sub.subtitle_id}")
+                else:
+                    logger.info(f"[下载] 第 {idx+1} 个字幕下载成功 | id={sub.subtitle_id}")
 
                 task.current_subtitle_index = idx + 1
                 progress = int((idx + 1) / len(selected) * 100)
@@ -236,11 +255,13 @@ class DownloadManager:
 
             if task.status_enum == TaskStatus.DOWNLOADING:
                 task.mark_completed()
-                task._log("下载完成")
+                logger.info(f"[下载] 全部完成: {video_name} | 共 {len(selected)} 个字幕")
 
         except DownloadCancelled:
+            logger.info(f"[下载] 已取消: {video_name}")
             task.mark_cancelled()
         except Exception as e:
+            logger.error(f"[下载] 处理失败: {video_name} | 错误={e}", exc_info=True)
             task.mark_failed(str(e))
 
     def _search_subtitles(self, video: VideoFile) -> list:
@@ -257,12 +278,20 @@ class DownloadManager:
                     languages=self.config.language_priority,
                     max_count=self.config.max_subtitles_per_video * 3,
                 )
+                logger.info(f"[搜索] provider={provider.provider_name} 视频={video.file_name}")
                 result = provider.search(params)
-                if result.is_success:
+                if result.error:
+                    logger.warning(f"[搜索] {provider.provider_name} 返回错误: {result.error}")
+                elif result.is_success:
+                    logger.info(f"[搜索] {provider.provider_name} 找到 {len(result.items)} 条 | 视频={video.file_name}")
                     all_results.extend(result.items)
+                else:
+                    logger.info(f"[搜索] {provider.provider_name} 未找到结果 | 视频={video.file_name}")
             except Exception as e:
-                continue  # 一个源失败不影响其他源
+                logger.warning(f"[搜索] {provider.provider_name} 搜索异常: {e} | 视频={video.file_name}")
+                continue
 
+        logger.info(f"[搜索] 合计 {len(all_results)} 条候选字幕 | 视频={video.file_name}")
         return all_results
 
     def _download_subtitle(
@@ -271,29 +300,28 @@ class DownloadManager:
         subtitle,
         index: int,
     ) -> bool:
-        """下载单个字幕文件到视频目录
-
-        Args:
-            task: 父任务
-            subtitle: 字幕信息对象
-            index: 当前索引
-
-        Returns:
-            是否成功
-        """
+        """下载单个字幕文件到视频目录"""
         video_dir = task.video.path.parent
+        video_name = task.video.file_name
 
         try:
             for provider in self.providers:
                 target_provider = getattr(subtitle, 'provider', None) or provider.provider_name
                 if provider.provider_name != target_provider and target_provider is not None:
-                    # 先跳过，用匹配的 provider
-                    pass
+                    continue
 
+                logger.info(f"[下载] 请求 provider={provider.provider_name} 下载 id={subtitle.subtitle_id}")
                 try:
                     content, original_name = provider.download(subtitle.subtitle_id)
-                except Exception:
+                except Exception as e:
+                    logger.warning(f"[下载] {provider.provider_name} 下载失败: {e}")
                     continue
+
+                if not content:
+                    logger.warning(f"[下载] {provider.provider_name} 返回空内容")
+                    continue
+
+                logger.info(f"[下载] 收到 {len(content)} 字节 | provider={provider.provider_name} 原始文件名={original_name}")
 
                 # 生成目标文件名
                 video_stem = task.video.file_name_without_ext
@@ -308,18 +336,19 @@ class DownloadManager:
 
                 # 检查是否已存在
                 if target_path.exists():
-                    task._log(f"跳过已存在的字幕: {target_name}")
+                    logger.info(f"[下载] 跳过已存在的字幕: {target_name} | 路径={target_path}")
                     return True
 
                 # 写入文件
                 with open(target_path, "wb") as f:
                     f.write(content)
 
-                task._log(f"已下载: {target_name}")
+                logger.info(f"[下载] 已保存: {target_name} | 路径={target_path} | 大小={len(content)}字节")
                 return True
 
         except Exception as e:
-            task._log(f"下载失败: {e}")
+            logger.error(f"[下载] 写入文件失败: {video_name} | 错误={e}")
             return False
 
+        logger.warning(f"[下载] 没有可用的 provider 处理 id={subtitle.subtitle_id}")
         return False
