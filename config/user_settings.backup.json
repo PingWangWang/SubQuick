@@ -32,7 +32,7 @@
         "shooter": {
             "enabled": true,
             "api_key": "TFD997f1xTzB2mPudMakdWPH5dGZV4KQ",
-            "api_key_validated": false
+            "api_key_validated": true
         }
     },
     "active_provider": "shooter",
@@ -55,7 +55,9 @@
         "theme": "light",
         "language": "zh",
         "font_family": "Microsoft YaHei",
-        "font_size": 16
+        "font_size": 16,
+        "window_width": 800,
+        "window_height": 450
     },
     "first_run": false
 }

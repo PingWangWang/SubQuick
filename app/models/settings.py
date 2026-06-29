@@ -222,6 +222,8 @@ class UIConfig:
     language: str = "zh"
     font_family: str = ""
     font_size: int = 14
+    window_width: int = 1440
+    window_height: int = 810
 
     def __post_init__(self):
         self.validate()
@@ -240,6 +242,8 @@ class UIConfig:
             "language": self.language,
             "font_family": self.font_family,
             "font_size": self.font_size,
+            "window_width": self.window_width,
+            "window_height": self.window_height,
         }
 
     @classmethod
@@ -249,6 +253,8 @@ class UIConfig:
             language=data.get("language", "zh"),
             font_family=data.get("font_family", ""),
             font_size=data.get("font_size", 14),
+            window_width=data.get("window_width", 1440),
+            window_height=data.get("window_height", 810),
         )
 
 

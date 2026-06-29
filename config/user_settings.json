@@ -55,7 +55,9 @@
         "theme": "light",
         "language": "zh",
         "font_family": "Microsoft YaHei",
-        "font_size": 16
+        "font_size": 16,
+        "window_width": 1263,
+        "window_height": 663
     },
     "first_run": false
 }
