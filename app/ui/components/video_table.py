@@ -245,7 +245,7 @@ class VideoTable(ft.Container):
         elif video.subtitle_status == "exists":
             bg = ft.Colors.with_opacity(0.03, AppColors.SUCCESS)
 
-        cb = ft.Checkbox(value=selected)
+        cb = ft.Checkbox(value=selected, on_change=lambda e, i=idx: self._on_row_select(i, e.control.value))
 
         display_name = video.file_name
         if len(display_name) > 40:
@@ -292,36 +292,46 @@ class VideoTable(ft.Container):
 
     def _on_toggle_select_all(self, e=None) -> None:
         """点击「全选」按钮切换全选状态"""
-        if self._row_checkboxes and all(cb.value for cb in self._row_checkboxes):
-            # 全部已选中 → 取消全选
+        n = len(self._filtered_videos)
+        if n == 0 or not self._row_checkboxes:
+            return
+        # 直接从实际 checkbox 状态判断：全部已选中 → 取消全选，否则全选
+        if all(cb.value for cb in self._row_checkboxes):
             for cb in self._row_checkboxes:
                 cb.value = False
             self._selected_indices.clear()
         else:
-            # 全部选中
             for cb in self._row_checkboxes:
                 cb.value = True
-            self._selected_indices = set(range(len(self._filtered_videos)))
+            self._selected_indices = set(range(n))
         self.update()
         self._update_count()
         self._on_selection_change and self._on_selection_change()
 
     def _invert_selection(self, e=None) -> None:
-        for cb in self._row_checkboxes:
-            cb.value = not cb.value
+        n = len(self._filtered_videos)
+        if n == 0:
+            return
+        # 先同步当前 checkbox 状态到 _selected_indices
+        self._sync_selection()
+        # 计算反选后的选中集合
+        all_indices = set(range(n))
+        self._selected_indices = all_indices - self._selected_indices
+        # 重建行
         self._rebuild_rows()
         self._update_count()
         self._on_selection_change and self._on_selection_change()
 
     def _update_count(self) -> None:
+        """根据列表中 checkbox 的实际勾选状态更新计数"""
         total = len(self._filtered_videos)
         selected = sum(1 for cb in self._row_checkboxes if cb.value)
         parts = [f"共 {total} 部"]
         if self._filter_format != "全部":
             parts.insert(0, f"[{self._filter_format}]")
-        if selected > 0:
-            parts.append(f"已选 {selected} 部")
+        parts.append(f"已选 {selected} 部")
         self._count_text.value = " | ".join(parts)
+        self.update()
 
     # ── 双击 ──────────────────────────────────────────────
 

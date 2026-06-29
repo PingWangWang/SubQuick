@@ -209,7 +209,7 @@ class MainPage(ft.Column):
 
         # Header（背景色跟随深浅主题）
         self._header = ft.Container(
-            bgcolor=ft.Colors.with_opacity(0.85, ft.Colors.SURFACE),
+            bgcolor=ft.Colors.SURFACE,
             content=ft.Row(
                 controls=[
                     ft.Row(
