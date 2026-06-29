@@ -37,12 +37,12 @@ class ScanPanel(ft.Container):
             read_only=True,
             on_click=self._pick_directory,
         )
-        self._browse_btn = ft.ElevatedButton(
+        self._browse_btn = ft.Button(
             "浏览目录",
             icon=ft.Icons.FOLDER_OPEN,
             on_click=self._pick_directory,
         )
-        self._scan_btn = ft.ElevatedButton(
+        self._scan_btn = ft.Button(
             "开始扫描",
             icon=ft.Icons.SEARCH,
             on_click=self._on_scan_click,
@@ -88,7 +88,7 @@ class ScanPanel(ft.Container):
 
         super().__init__(
             content=content,
-            padding=ft.padding.all(12),
+            padding=ft.Padding(left=12, right=12, top=12, bottom=12),
             bgcolor=ft.Colors.with_opacity(0.03, AppColors.PRIMARY),
             border_radius=8,
         )
@@ -162,7 +162,7 @@ class ActionPanel(ft.Container):
         self._on_export = on_export
         self._app = app
 
-        self._download_btn = ft.ElevatedButton(
+        self._download_btn = ft.Button(
             "一键匹配",
             icon=ft.Icons.DOWNLOAD,
             disabled=True,
@@ -187,7 +187,7 @@ class ActionPanel(ft.Container):
 
         super().__init__(
             content=content,
-            padding=ft.padding.all(8),
+            padding=ft.Padding(left=8, right=8, top=8, bottom=8),
         )
 
     def set_buttons_enabled(self, enabled: bool):
@@ -247,7 +247,7 @@ class MainPage(ft.Column):
                     ),
                 ],
             ),
-            padding=ft.padding.only(left=16, right=8, top=8, bottom=4),
+            padding=ft.Padding(left=16, right=8, top=8, bottom=4),
         )
 
         # 扫描面板
@@ -278,7 +278,7 @@ class MainPage(ft.Column):
                     ft.Text("", size=12, color=ft.Colors.GREY_500),
                 ],
             ),
-            padding=ft.padding.only(left=16, right=16, top=4, bottom=4),
+            padding=ft.Padding(left=16, right=16, top=4, bottom=4),
             bgcolor=ft.Colors.with_opacity(0.03, ft.Colors.GREY),
         )
 
@@ -299,7 +299,7 @@ class MainPage(ft.Column):
                             self._action_panel,
                         ],
                     ),
-                    padding=ft.padding.only(left=16, right=16),
+                    padding=ft.Padding(left=16, right=16),
                     expand=True,
                 ),
                 self._status_bar,

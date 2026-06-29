@@ -27,7 +27,7 @@ class WizardPage(ft.Column):
         self._step_container = ft.Container(expand=True)
         self._step_indicator = ft.Text("步骤 1/4", size=12, color=ft.Colors.GREY_500)
         self._back_btn = ft.TextButton("上一步", disabled=True, on_click=self._go_back)
-        self._next_btn = ft.ElevatedButton("下一步", on_click=self._go_next)
+        self._next_btn = ft.Button("下一步", on_click=self._go_next)
         self._skip_btn = ft.TextButton("跳过引导", on_click=self._finish_wizard)
 
         # 各步骤中收集的数据
@@ -44,7 +44,7 @@ class WizardPage(ft.Column):
                 ],
                 alignment=ft.MainAxisAlignment.CENTER,
             ),
-            padding=ft.padding.only(top=60, bottom=20),
+            padding=ft.Padding(top=60, bottom=20),
         )
 
         # ── 底部导航 ─────────────────────────────────
@@ -57,7 +57,7 @@ class WizardPage(ft.Column):
                     self._next_btn,
                 ],
             ),
-            padding=ft.padding.only(left=40, right=40, top=10, bottom=30),
+            padding=ft.Padding(left=40, right=40, top=10, bottom=30),
         )
 
         # ── 布局 ────────────────────────────────────
@@ -75,10 +75,14 @@ class WizardPage(ft.Column):
             ],
         )
 
-        # 加载第一步
-        self._show_step(1)
+        # 加载第一步（在 did_mount 中执行，确保控件已挂载到页面）
+        # self._show_step(1) 移至 did_mount
 
-    # ── 步骤渲染 ──────────────────────────────────────
+    # ── 生命周期 ─────────────────────────────────────────
+
+    def did_mount(self):
+        """控件添加到页面后，加载第一步内容"""
+        self._show_step(1)
 
     def _show_step(self, step: int) -> None:
         """显示指定步骤的内容"""
@@ -238,7 +242,7 @@ class WizardPage(ft.Column):
                     ft.Container(height=10),
                     ft.Text("OpenSubtitles API Key", size=14),
                     key_field,
-                    ft.ElevatedButton("验证 Key", on_click=validate_key),
+                    ft.Button("验证 Key", on_click=validate_key),
                     status_text,
                     ft.TextButton(
                         "没有 Key？前往 opensubtitles.com 注册",

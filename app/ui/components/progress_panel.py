@@ -68,7 +68,7 @@ class ProgressPanel(ft.Container):
 
         super().__init__(
             content=content_column,
-            padding=ft.padding.all(12),
+            padding=ft.Padding(left=12, right=12, top=12, bottom=12),
             border_radius=8,
             bgcolor=ft.Colors.with_opacity(0.05, AppColors.PRIMARY),
             visible=False,

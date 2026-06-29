@@ -35,7 +35,7 @@ class SettingsPage(ft.Column):
                     ft.Container(expand=True),
                 ],
             ),
-            padding=ft.padding.only(left=8, right=16, top=8, bottom=4),
+            padding=ft.Padding(left=8, right=16, top=8, bottom=4),
         )
 
         # ── 左栏控件 ───────────────────────────────────
@@ -123,7 +123,7 @@ class SettingsPage(ft.Column):
                         spacing=8,
                         controls=[
                             self._api_key_field,
-                            ft.ElevatedButton(
+                            ft.Button(
                                 "验证",
                                 on_click=self._validate_api_key,
                             ),
@@ -262,7 +262,7 @@ class SettingsPage(ft.Column):
                     ft.Column(col={"sm": 12, "md": 6, "lg": 6}, controls=[right_column]),
                 ],
             ),
-            padding=ft.padding.only(left=16, right=16, top=8),
+            padding=ft.Padding(left=16, right=16, top=8),
             expand=True,
         )
 

@@ -1,4 +1,4 @@
-# scripts/run_dev.ps1 — 开发调试启动
+﻿# scripts/run_dev.ps1 — 开发调试启动
 # 用法: .\scripts\run_dev.ps1
 #
 # 首次运行时会下载 Flutter 引擎（约 50-200MB，1-5 分钟，一次性）。

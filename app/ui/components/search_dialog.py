@@ -41,7 +41,7 @@ class SearchDialog(ft.AlertDialog):
             hint_text="IMDb ID (可选)",
             width=200,
         )
-        self._search_btn = ft.ElevatedButton(
+        self._search_btn = ft.Button(
             "搜索",
             icon=ft.Icons.SEARCH,
             on_click=self._do_search,
@@ -59,7 +59,7 @@ class SearchDialog(ft.AlertDialog):
         )
 
         # 下载按钮
-        self._download_btn = ft.ElevatedButton(
+        self._download_btn = ft.Button(
             "下载选中",
             icon=ft.Icons.DOWNLOAD,
             disabled=True,

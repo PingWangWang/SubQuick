@@ -99,7 +99,7 @@ class VideoTable(ft.Container):
                     self._count_text,
                 ],
             ),
-            padding=ft.padding.only(bottom=4),
+            padding=ft.Padding(bottom=4),
         )
 
         # 主体内容
